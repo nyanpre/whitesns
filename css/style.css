@@ -1,16 +1,18 @@
-/* スマホでの入力時にズームしないように調整 */
+/* スマホ入力時のズーム防止 */
 input, textarea {
     font-size: 16px !important;
 }
 
-/* タブのスタイリング */
+/* 上部タブのスタイル */
 .tab-item {
-    flex: 0 0 auto;
-    padding: 12px 20px;
+    flex: 1 0 auto;
+    padding: 14px 10px;
+    font-size: 14px;
     font-weight: 600;
     color: #65676b;
     position: relative;
-    white-space: nowrap;
+    text-align: center;
+    transition: background 0.2s;
 }
 
 .tab-item.active {
@@ -28,17 +30,23 @@ input, textarea {
     border-radius: 99px;
 }
 
-/* ボトムナビのアクティブ色（少し薄くしたり色をつけたり） */
+/* ボトムナビのアクティブ表示 */
 .nav-item {
-    opacity: 0.5;
-    transition: opacity 0.2s;
+    opacity: 0.4;
+    transition: opacity 0.2s, transform 0.1s;
+    padding: 4px 12px;
 }
 
 .nav-item.active {
     opacity: 1;
+    transform: scale(1.1);
 }
 
-/* スクロールバーを隠す（タブ部分用） */
+/* 横スクロールバーを隠す */
 .scrollbar-hide::-webkit-scrollbar {
     display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
