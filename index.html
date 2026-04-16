@@ -7,32 +7,25 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="bg-white text-gray-900 pb-20">
+<body class="bg-white text-gray-900 pb-24">
 
-    <header class="sticky top-0 bg-white/90 backdrop-blur-md border-b z-20 p-4">
-        <h1 id="header-title" class="font-bold text-xl">ホーム</h1>
+    <header class="sticky top-0 bg-white/90 backdrop-blur-md border-b z-30 p-4">
+        <h1 id="header-title" class="font-bold text-xl text-center">ホーム</h1>
     </header>
-    
-    <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-3 text-2xl z-20">
-        <button class="nav-item active" data-view="home">🏠</button>
-        <button class="nav-item" data-view="search">🔍</button>
-        <button class="nav-item" data-view="notifications">🔔</button>
-        <button class="nav-item" data-view="profile">👤</button>
-    </nav>
 
-    <section class="p-4 border-b">
+    <section id="post-section" class="p-4 border-b">
         <div class="flex gap-3">
             <div class="w-12 h-12 bg-gray-200 rounded-full flex-shrink-0"></div>
             <div class="flex-1">
                 <textarea id="post-input" maxlength="500" placeholder="いまどうしてる？" 
-                    class="w-full h-24 resize-none outline-none text-lg placeholder:text-gray-500"></textarea>
-                <div class="flex justify-between items-center mt-2">
+                    class="w-full h-24 resize-none outline-none text-lg placeholder:text-gray-400"></textarea>
+                <div class="flex justify-between items-center mt-2 border-t pt-2">
                     <div class="flex gap-4 text-blue-500 text-xl">
-                        <button type="button">🖼️</button>
+                        <button type="button" class="hover:bg-blue-50 p-2 rounded-full transition">🖼️</button>
                     </div>
                     <div class="flex items-center gap-3">
-                        <span id="char-count" class="text-sm text-gray-500">0 / 500</span>
-                        <button class="bg-blue-500 text-white px-5 py-2 rounded-full font-bold disabled:opacity-50" id="post-btn" disabled>
+                        <span id="char-count" class="text-sm text-gray-500 font-mono">0 / 500</span>
+                        <button id="post-btn" class="bg-blue-500 text-white px-5 py-2 rounded-full font-bold disabled:opacity-50 transition" disabled>
                             投稿
                         </button>
                     </div>
@@ -41,23 +34,24 @@
         </div>
     </section>
 
-    <nav class="flex border-b overflow-x-auto scrollbar-hide sticky top-[61px] bg-white z-10">
+    <nav id="profile-tabs" class="hidden flex border-b overflow-x-auto scrollbar-hide sticky top-[61px] bg-white z-20">
         <button class="tab-item active" data-tab="posts">投稿</button>
         <button class="tab-item" data-tab="replies">返信</button>
         <button class="tab-item" data-tab="media">メディア</button>
         <button class="tab-item" data-tab="likes">いいね</button>
-        <button class="tab-item" data-tab="bookmarks">ブックマーク</button>
+        <button class="tab-item" data-tab="bookmarks">保存</button>
     </nav>
 
-    <main id="feed" class="divide-y divide-gray-100">
-        <div class="p-10 text-center text-gray-400">タイムライン読み込み中...</div>
+    <main id="main-content" class="divide-y divide-gray-100">
+        <div id="feed" class="min-h-screen">
+            </div>
     </main>
 
-    <nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-3 text-2xl z-20">
-        <button>🏠</button>
-        <button>🔍</button>
-        <button>🔔</button>
-        <button>👤</button>
+    <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-3 text-2xl z-40">
+        <button class="nav-item active" data-view="home">🏠</button>
+        <button class="nav-item" data-view="search">🔍</button>
+        <button class="nav-item" data-view="notifications">🔔</button>
+        <button class="nav-item" data-view="profile">👤</button>
     </nav>
 
     <script src="js/app.js"></script>
