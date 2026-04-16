@@ -28,6 +28,16 @@ input, textarea {
     border-radius: 99px;
 }
 
+/* ボトムナビのアクティブ色（少し薄くしたり色をつけたり） */
+.nav-item {
+    opacity: 0.5;
+    transition: opacity 0.2s;
+}
+
+.nav-item.active {
+    opacity: 1;
+}
+
 /* スクロールバーを隠す（タブ部分用） */
 .scrollbar-hide::-webkit-scrollbar {
     display: none;
