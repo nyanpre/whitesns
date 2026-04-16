@@ -10,8 +10,15 @@
 <body class="bg-white text-gray-900 pb-20">
 
     <header class="sticky top-0 bg-white/90 backdrop-blur-md border-b z-20 p-4">
-        <h1 class="font-bold text-xl">ホーム</h1>
+        <h1 id="header-title" class="font-bold text-xl">ホーム</h1>
     </header>
+    
+    <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-3 text-2xl z-20">
+        <button class="nav-item active" data-view="home">🏠</button>
+        <button class="nav-item" data-view="search">🔍</button>
+        <button class="nav-item" data-view="notifications">🔔</button>
+        <button class="nav-item" data-view="profile">👤</button>
+    </nav>
 
     <section class="p-4 border-b">
         <div class="flex gap-3">
