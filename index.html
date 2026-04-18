@@ -4,55 +4,122 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>whiteSNS</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#1d9bf0',
+                        bgBase: '#ffffff',
+                        borderBase: '#eff3f4',
+                        textMain: '#0f1419',
+                        textSub: '#536471'
+                    }
+                }
+            }
+        }
+    </script>
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="bg-white text-gray-900 pb-24">
+<body class="bg-bgBase text-textMain pb-16 font-sans antialiased text-[15px]">
 
-    <header class="sticky top-0 bg-white/90 backdrop-blur-md border-b z-30 p-4">
-        <h1 id="header-title" class="font-bold text-xl text-center">ホーム</h1>
+    <!-- Header -->
+    <header class="sticky top-0 bg-white/80 backdrop-blur-md border-b border-borderBase z-30 px-4 h-14 flex items-center shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-all justify-between">
+        <h1 id="header-title" class="font-bold text-xl tracking-tight">ホーム</h1>
+        <div id="header-avatar" class="w-8 h-8 rounded-full bg-gray-200 overflow-hidden cursor-pointer hidden">
+            <!-- JSで動的にアバターをセット -->
+        </div>
     </header>
 
-    <section id="post-section" class="p-4 border-b">
-        <div class="flex gap-3">
-            <div class="w-12 h-12 bg-gray-200 rounded-full flex-shrink-0"></div>
-            <div class="flex-1">
-                <textarea id="post-input" maxlength="500" placeholder="いまどうしてる？" 
-                    class="w-full h-24 resize-none outline-none text-lg placeholder:text-gray-400"></textarea>
-                <div class="flex justify-between items-center mt-2 border-t pt-2">
-                    <div class="flex gap-4 text-blue-500 text-xl">
-                        <button type="button" class="hover:bg-blue-50 p-2 rounded-full transition">🖼️</button>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span id="char-count" class="text-sm text-gray-500 font-mono">0 / 500</span>
-                        <button id="post-btn" class="bg-blue-500 text-white px-5 py-2 rounded-full font-bold disabled:opacity-50 transition" disabled>
-                            投稿
-                        </button>
-                    </div>
-                </div>
-            </div>
+    <!-- Content Area -->
+    <main id="main-content" class="w-full max-w-2xl mx-auto min-h-screen border-x border-borderBase relative">
+        
+        <!-- Post Input Section -->
+        <section id="post-section" class="p-4 border-b border-borderBase">
+            <!-- JSで動的に未ログイン・ログイン中を切り替え -->
+        </section>
+
+        <!-- Profile Header (Hidden by default) -->
+        <section id="profile-header" class="hidden">
+            <!-- JSで動的に未ログイン・ログイン中を切り替え -->
+        </section>
+
+        <!-- Profile Tabs -->
+        <nav id="profile-tabs" class="hidden flex border-b border-borderBase sticky top-[56px] bg-white/90 backdrop-blur-md z-20 transition-all">
+            <button class="tab-item active" data-tab="posts">投稿</button>
+            <button class="tab-item" data-tab="replies">返信</button>
+            <button class="tab-item" data-tab="media">メディア</button>
+            <button class="tab-item" data-tab="likes">いいね</button>
+            <button class="tab-item" data-tab="bookmarks">保存</button>
+        </nav>
+
+        <!-- Feed / List Output -->
+        <div id="feed" class="pb-24">
+            <!-- Content gets injected here -->
         </div>
-    </section>
-
-    <nav id="profile-tabs" class="hidden flex border-b overflow-x-auto scrollbar-hide sticky top-[61px] bg-white z-20">
-        <button class="tab-item active" data-tab="posts">投稿</button>
-        <button class="tab-item" data-tab="replies">返信</button>
-        <button class="tab-item" data-tab="media">メディア</button>
-        <button class="tab-item" data-tab="likes">いいね</button>
-        <button class="tab-item" data-tab="bookmarks">保存</button>
-    </nav>
-
-    <main id="main-content" class="divide-y divide-gray-100">
-        <div id="feed" class="min-h-screen">
-            </div>
     </main>
 
-    <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around p-3 text-2xl z-40">
-        <button class="nav-item active" data-view="home">🏠</button>
-        <button class="nav-item" data-view="search">🔍</button>
-        <button class="nav-item" data-view="notifications">🔔</button>
-        <button class="nav-item" data-view="profile">👤</button>
+    <!-- Bottom Navigation -->
+    <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-borderBase flex justify-around p-2 z-40 pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
+        <button class="nav-item active flex flex-col items-center justify-center p-2 rounded-xl transition" data-view="home">
+            <span class="material-symbols-rounded !text-[28px]">home</span>
+        </button>
+        <button class="nav-item flex flex-col items-center justify-center p-2 rounded-xl transition" data-view="search">
+            <span class="material-symbols-rounded !text-[28px]">search</span>
+        </button>
+        <button class="nav-item flex flex-col items-center justify-center p-2 rounded-xl transition" data-view="notifications">
+            <span class="material-symbols-rounded !text-[28px]">notifications</span>
+        </button>
+        <button class="nav-item flex flex-col items-center justify-center p-2 rounded-xl transition" data-view="profile">
+            <span class="material-symbols-rounded !text-[28px]">person</span>
+        </button>
     </nav>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-xl p-6 transform scale-95 transition-transform duration-300" id="login-modal-content">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="font-bold text-xl">Blueskyでログイン</h3>
+                <button id="close-login-btn" class="text-gray-400 hover:text-gray-600">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+            
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-textMain mb-1">ハンドル名</label>
+                    <input type="text" id="bsky-handle" placeholder="your.bsky.social" class="w-full border border-gray-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-textMain mb-1">アプリパスワード</label>
+                    <input type="password" id="bsky-app-password" placeholder="xxxx-xxxx-xxxx-xxxx" class="w-full border border-gray-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all">
+                    <p class="text-[11px] text-textSub mt-2">Blueskyの [設定] ＞ [高度な設定] ＞ [アプリパスワード] から生成したものを利用してください。</p>
+                </div>
+                
+                <div class="pt-2">
+                    <button type="submit" id="login-submit-btn" class="w-full bg-black text-white font-bold py-3 rounded-full hover:bg-gray-800 transition shadow-md flex justify-center items-center">
+                        <span>ログイン</span>
+                        <div id="login-spinner" class="ml-2 w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin hidden"></div>
+                    </button>
+                    <!-- モックでテスト用 -->
+                    <button type="button" id="mock-login-btn" class="w-full bg-blue-50 text-primary font-bold py-3 rounded-full hover:bg-blue-100 transition mt-2">
+                        （テスト）モックログイン
+                    </button>
+                </div>
+                <div id="login-error" class="hidden text-red-500 text-sm text-center font-medium"></div>
+            </form>
+        </div>
+    </div>
 
     <script src="js/app.js"></script>
 </body>
