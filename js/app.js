@@ -35,14 +35,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- MOCK Data ---
     const MOCK_PROFILES = JSON.parse(localStorage.getItem('whiteSNS_profiles')) || {
-        "@guest": { displayName: "Guest User", handle: "@guest", avatar: "https://ui-avatars.com/api/?name=Guest&background=random" },
-        "@system": { displayName: "System", handle: "@system", avatar: "https://ui-avatars.com/api/?name=Sys&background=6366f1&color=fff" },
+        "@guest": { displayName: "ゲストユーザー", handle: "@guest", avatar: "https://ui-avatars.com/api/?name=Guest&background=random" },
+        "@system": { displayName: "システム", handle: "@system", avatar: "https://ui-avatars.com/api/?name=Sys&background=6366f1&color=fff" },
     };
 
     let MOCK_POSTS = JSON.parse(localStorage.getItem('whiteSNS_posts')) || [
-        { id: 1, user: "Guest User", handle: "@guest", text: "今日からwhiteSNSを使い始めました！ #初めての投稿", time: "1時間前", likes: 15, retweets: 2, replies: 0 },
-        { id: 2, user: "System", handle: "@system", text: "ダークモードやURLプレビューなど、UIが進化したプロトタイプ版です！\n外部へのリンクもこんな感じになります。 https://github.com", time: "3時間前", likes: 120, retweets: 48, replies: 1 },
-        { id: 3, parent_id: 2, user: "TestUser", handle: "@demo.bsky.social", text: "とても便利ですね！下書き機能も助かります。", time: "2時間前", likes: 5, retweets: 0, replies: 0 }
+        { id: 1, user: "ゲストユーザー", handle: "@guest", text: "今日からwhiteSNSを使い始めました！ #初めての投稿", time: "1時間前", likes: 15, retweets: 2, replies: 0 },
+        { id: 2, user: "システム", handle: "@system", text: "ダークモードやURLプレビューなど、UIが進化したプロトタイプ版です！\n外部へのリンクもこんな感じになります。 https://github.com", time: "3時間前", likes: 120, retweets: 48, replies: 1 },
+        { id: 3, parent_id: 2, user: "テストユーザー", handle: "@demo.bsky.social", text: "とても便利ですね！下書き機能も助かります。", time: "2時間前", likes: 5, retweets: 0, replies: 0 }
     ];
 
     function saveState() {
@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const urlMatch = text.match(/(https?:\/\/[^\s]+)/);
         if(!urlMatch) return '';
         const url = urlMatch[1];
-        let hostname = 'Link';
+        let hostname = 'リンク';
         try { hostname = new URL(url).hostname; } catch(e){}
 
         return `
@@ -106,8 +106,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="text-[10px] font-mono opacity-80">${hostname}</span>
                 </div>
                 <div class="p-2 bg-white/50 dark:bg-slate-900/50 border-t border-borderBase/50 dark:border-darkBorder/50">
-                    <div class="text-[13px] font-bold truncate mb-0.5">Preview Card</div>
-                    <div class="text-[11px] text-textSub dark:text-darkTextSub line-clamp-1">OGP mock info</div>
+                    <div class="text-[13px] font-bold truncate mb-0.5">プレビューカード (Mock)</div>
+                    <div class="text-[11px] text-textSub dark:text-darkTextSub line-clamp-1">将来ここにOGP情報が表示されます。</div>
                 </div>
             </a>
         `;
@@ -140,7 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('compose-avatar').innerHTML = `<img src="${currentUser.avatar}" alt="Avatar" class="w-full h-full object-cover">`;
         if (replyTarget) {
             document.getElementById('reply-context').classList.remove('hidden');
-            document.getElementById('reply-to-text').textContent = `Replying to: ${replyTarget.handle}`;
+            document.getElementById('reply-to-text').textContent = `返信先: ${replyTarget.handle}`;
             composeInput.value = "";
         } else {
             document.getElementById('reply-context').classList.add('hidden');
@@ -168,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderDraftsList() {
         const list = document.getElementById('drafts-list');
-        if(drafts.length === 0) { list.innerHTML = `<div class="p-8 text-center text-textSub font-bold opacity-50 text-[13px]">No drafts</div>`; return; }
+        if(drafts.length === 0) { list.innerHTML = `<div class="p-8 text-center text-textSub font-bold opacity-50 text-[13px]">下書きはありません</div>`; return; }
         list.innerHTML = drafts.map(d => `
             <div class="px-4 py-3 border-b border-borderBase/50 dark:border-darkBorder/50 hover:bg-black/5 dark:hover:bg-white/5 transition flex items-start gap-2 cursor-pointer draft-item" data-id="${d.id}">
                 <div class="flex-1">
@@ -262,7 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
         finishLogin({
             did: "did:mock:12345",
             handle: "@raira0626.bsky.social",
-            displayName: "TestUser",
+            displayName: "テストユーザー",
             avatar: "https://ui-avatars.com/api/?name=Test&background=ec4899&color=fff",
             bio: "whiteSNSのプロトタイプテスターです"
         });
@@ -297,13 +297,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-black/5 dark:border-white/5 shadow-sm">
                         <img src="${currentUser.avatar}" alt="Avatar" class="w-full h-full object-cover">
                     </div>
-                    <div class="text-textSub dark:text-darkTextSub text-[14px] ml-1 opacity-70">What's happening?</div>
+                    <div class="text-textSub dark:text-darkTextSub text-[14px] ml-1 opacity-70">いまどうしてる？</div>
                 </div>`;
             postSection.classList.remove('hidden');    
         } else {
             postSection.innerHTML = `
                 <div class="py-4 text-center">
-                    <button class="bg-gradient-to-r from-primary to-secondary text-white font-bold py-1.5 px-6 rounded-full text-[13px] shadow-sm hover:opacity-90" onclick="document.getElementById('login-modal').classList.add('modal-open');">Log in</button>
+                    <button class="bg-gradient-to-r from-primary to-secondary text-white font-bold py-1.5 px-6 rounded-full text-[13px] shadow-sm hover:opacity-90" onclick="document.getElementById('login-modal').classList.add('modal-open');">ログインする</button>
                 </div>`;
             postSection.classList.remove('hidden');
         }
@@ -319,14 +319,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         <img src="${targetUser.avatar}" alt="Avatar" class="w-full h-full object-cover rounded-full">
                     </div>
                     ${isMe ? `
-                    <button class="absolute -bottom-8 right-3 border border-borderBase dark:border-darkBorder bg-white/80 dark:bg-slate-900/80 px-3 py-1.5 rounded-full font-bold hover:bg-black/5 text-[12px]" onclick="document.getElementById('profile-edit-btn').click()">Edit</button>
+                    <button class="absolute -bottom-8 right-3 border border-borderBase dark:border-darkBorder bg-white/80 dark:bg-slate-900/80 px-3 py-1.5 rounded-full font-bold hover:bg-black/5 text-[12px]" onclick="document.getElementById('profile-edit-btn').click()">プロフィールを編集</button>
                     <button id="profile-edit-btn" class="hidden"></button>
                     ` : ''}
                 </div>
                 <div class="pt-12 px-4 pb-4">
                     <h2 class="font-bold text-[18px]">${targetUser.displayName}</h2>
                     <p class="text-textSub dark:text-darkTextSub text-[12px] font-mono mt-0.5 opacity-80">${targetUser.handle}</p>
-                    <p class="mt-2 text-[14px] leading-snug whitespace-pre-wrap">${targetUser.bio || 'No bio yet.'}</p>
+                    <p class="mt-2 text-[14px] leading-snug whitespace-pre-wrap">${targetUser.bio || '自己紹介はまだありません。'}</p>
                 </div>`;
             profileTabs.classList.remove('hidden');
             document.getElementById('profile-edit-btn')?.addEventListener('click', openProfileEdit);
@@ -337,11 +337,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderFeed(posts) {
         if(posts.length === 0) {
-            feed.innerHTML = `<div class="p-8 text-center text-textSub text-[13px] font-bold opacity-50">No posts yet</div>`;
+            feed.innerHTML = `<div class="p-8 text-center text-textSub text-[13px] font-bold opacity-50">まだ投稿がありません</div>`;
             return;
         }
 
-        // Change from margin-separated rounded cards to dense border-bottom rows
         feed.innerHTML = posts.map(post => {
             const profile = MOCK_PROFILES[post.handle] || { avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user)}&background=random` };
             const isBookmarked = bookmarks.includes(post.id);
@@ -350,7 +349,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (post.parent_id) {
                 const parent = MOCK_POSTS.find(p => p.id === post.parent_id);
                 if (parent) {
-                    parentHtml = `<div class="text-[11px] text-secondary dark:text-pink-400 mb-1 ml-10 font-medium"><span class="material-symbols-rounded !text-[13px] align-text-bottom">reply</span> <span class="mention cursor-pointer hover:underline" data-handle="${parent.handle}">Replying to ${parent.handle}</span></div>`;
+                    parentHtml = `<div class="text-[11px] text-secondary dark:text-pink-400 mb-1 ml-10 font-medium"><span class="material-symbols-rounded !text-[13px] align-text-bottom">reply</span> <span class="mention cursor-pointer hover:underline" data-handle="${parent.handle}">返信先: ${parent.handle}</span></div>`;
                 }
             }
             
@@ -418,37 +417,37 @@ document.addEventListener('DOMContentLoaded', () => {
         window.scrollTo({top: 0, behavior: 'instant'});
 
         if (view === 'home') {
-            headerTitle.textContent = 'Home';
+            headerTitle.textContent = 'ホーム';
             updatePostSection();
             renderFeed(MOCK_POSTS);
         } else if (view === 'profile') {
             const targetUser = viewedUserProfile || currentUser;
-            headerTitle.textContent = 'Profile';
+            headerTitle.textContent = 'プロフィール';
             profileHeader.classList.remove('hidden');
             updateProfileHeader();
             if(targetUser) updateTabContent('posts', targetUser);
         } else if (view === 'notifications') {
-            headerTitle.textContent = 'Notifications';
+            headerTitle.textContent = '通知';
             if(currentUser) {
                 feed.innerHTML = `
                     <div class="px-4 py-3 border-b border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 transition flex gap-3">
                         <div class="w-8 flex justify-center mt-1"><span class="material-symbols-rounded text-primary !text-2xl">chat_bubble</span></div>
                         <div class="flex-1">
                             <img src="https://ui-avatars.com/api/?name=Guest&background=random" class="w-8 h-8 rounded-full mb-1.5 border border-white dark:border-darkBorder">
-                            <p class="text-[13px]"><span class="font-bold">Guest User</span>さんがあなたの投稿に返信しました</p>
+                            <p class="text-[13px]"><span class="font-bold">ゲストユーザー</span>さんがあなたの投稿に返信しました</p>
                         </div>
                     </div>`;
-            } else { feed.innerHTML = '<div class="p-8 text-center text-[13px] font-bold opacity-50">Log in to see notifications</div>'; }
+            } else { feed.innerHTML = '<div class="p-8 text-center text-[13px] font-bold opacity-50">通知を見るにはログインしてください</div>'; }
         } else if (view === 'search') {
-            headerTitle.textContent = 'Search';
+            headerTitle.textContent = '検索';
             feed.innerHTML = `
                 <div class="p-2 mb-2">
                     <div class="relative">
                         <span class="material-symbols-rounded absolute left-3 top-1/2 -translate-y-1/2 text-textSub opacity-60 !text-[20px]">search</span>
-                        <input type="text" id="srch" placeholder="Keywords..." class="w-full pl-9 pr-3 py-2 rounded-xl bg-white/50 dark:bg-white/5 border border-black/5 outline-none focus:ring-1 focus:ring-primary text-[14px]">
+                        <input type="text" id="srch" placeholder="キーワード検索..." class="w-full pl-9 pr-3 py-2 rounded-xl bg-white/50 dark:bg-white/5 border border-black/5 outline-none focus:ring-1 focus:ring-primary text-[14px]">
                     </div>
                 </div>
-                <div id="srch-res"><h3 class="font-bold text-[14px] px-3 mb-2 opacity-80">Trending</h3><div class="px-3"><span class="hashtag text-primary font-bold cursor-pointer hover:underline text-[15px]">#初めての投稿</span></div></div>
+                <div id="srch-res"><h3 class="font-bold text-[14px] px-3 mb-2 opacity-80">トレンド</h3><div class="px-3"><span class="hashtag text-primary font-bold cursor-pointer hover:underline text-[15px]">#初めての投稿</span></div></div>
             `;
             document.getElementById('srch').addEventListener('keydown', (e) => {
                 if(e.key === 'Enter') {
@@ -458,7 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     renderFeed(r);
                     const resHTML = feed.innerHTML;
                     feed.innerHTML = currentTop;
-                    document.getElementById('srch-res').innerHTML = `<h3 class="font-bold text-[14px] px-3 mb-2 opacity-80">Results : ${q}</h3>${resHTML}`;
+                    document.getElementById('srch-res').innerHTML = `<h3 class="font-bold text-[14px] px-3 mb-2 opacity-80">検索結果 : ${q}</h3>${resHTML}`;
                 }
             });
         }
@@ -525,7 +524,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!user) return;
         if(tabName === 'posts') { renderFeed(MOCK_POSTS.filter(p => p.handle === user.handle)); }
         else if(tabName === 'bookmarks' && user.handle === currentUser?.handle) { renderFeed(MOCK_POSTS.filter(p => bookmarks.includes(p.id))); }
-        else { feed.innerHTML = `<div class="p-8 text-center text-[13px] font-bold opacity-50">Empty</div>`; }
+        else { feed.innerHTML = `<div class="p-8 text-center text-[13px] font-bold opacity-50">まだありません</div>`; }
     }
 
     renderHeaderState();
