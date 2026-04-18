@@ -13,6 +13,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: {
@@ -23,7 +24,11 @@
                         bgBase: '#ffffff',
                         borderBase: '#eff3f4',
                         textMain: '#0f1419',
-                        textSub: '#536471'
+                        textSub: '#536471',
+                        darkBg: '#000000',
+                        darkBorder: '#2f3336',
+                        darkTextMain: '#e7e9ea',
+                        darkTextSub: '#71767b'
                     }
                 }
             }
@@ -31,31 +36,30 @@
     </script>
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="bg-bgBase text-textMain pb-16 font-sans antialiased text-[15px]">
+<body class="bg-bgBase text-textMain dark:bg-darkBg dark:text-darkTextMain pb-16 font-sans antialiased text-[15px] transition-colors duration-200">
 
     <!-- Header -->
-    <header class="sticky top-0 bg-white/80 backdrop-blur-md border-b border-borderBase z-30 px-4 h-14 flex items-center shadow-[0_1px_2px_rgba(0,0,0,0.03)] transition-all justify-between">
-        <h1 id="header-title" class="font-bold text-xl tracking-tight">ホーム</h1>
-        <div id="header-avatar" class="w-8 h-8 rounded-full bg-gray-200 overflow-hidden cursor-pointer hidden">
-            <!-- JSで動的にアバターをセット -->
+    <header class="sticky top-0 bg-white/80 dark:bg-darkBg/80 backdrop-blur-md border-b border-borderBase dark:border-darkBorder z-30 px-4 h-14 flex items-center shadow-sm transition-all justify-between">
+        <div class="flex items-center gap-3">
+            <div id="header-avatar" class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden cursor-pointer hidden"></div>
+            <h1 id="header-title" class="font-bold text-xl tracking-tight">ホーム</h1>
         </div>
+        <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition flex items-center justify-center">
+            <span id="theme-icon" class="material-symbols-rounded">dark_mode</span>
+        </button>
     </header>
 
     <!-- Content Area -->
-    <main id="main-content" class="w-full max-w-2xl mx-auto min-h-screen border-x border-borderBase relative">
+    <main id="main-content" class="w-full max-w-2xl mx-auto min-h-screen border-x border-borderBase dark:border-darkBorder relative">
         
-        <!-- Post Input Section -->
-        <section id="post-section" class="p-4 border-b border-borderBase">
-            <!-- JSで動的に未ログイン・ログイン中を切り替え -->
-        </section>
+        <!-- Post Input Section (Compact) -->
+        <section id="post-section" class="p-3 border-b border-borderBase dark:border-darkBorder bg-white/50 dark:bg-darkBg/50 backdrop-blur-sm sticky top-14 z-20"></section>
 
         <!-- Profile Header (Hidden by default) -->
-        <section id="profile-header" class="hidden">
-            <!-- JSで動的に未ログイン・ログイン中を切り替え -->
-        </section>
+        <section id="profile-header" class="hidden"></section>
 
         <!-- Profile Tabs -->
-        <nav id="profile-tabs" class="hidden flex border-b border-borderBase sticky top-[56px] bg-white/90 backdrop-blur-md z-20 transition-all">
+        <nav id="profile-tabs" class="hidden flex border-b border-borderBase dark:border-darkBorder sticky top-14 bg-white/90 dark:bg-darkBg/90 backdrop-blur-md z-20 transition-all">
             <button class="tab-item active" data-tab="posts">投稿</button>
             <button class="tab-item" data-tab="replies">返信</button>
             <button class="tab-item" data-tab="media">メディア</button>
@@ -64,13 +68,11 @@
         </nav>
 
         <!-- Feed / List Output -->
-        <div id="feed" class="pb-24">
-            <!-- Content gets injected here -->
-        </div>
+        <div id="feed" class="pb-24"></div>
     </main>
 
     <!-- Bottom Navigation -->
-    <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-md border-t border-borderBase flex justify-around p-2 z-40 pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
+    <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-darkBg/90 backdrop-blur-md border-t border-borderBase dark:border-darkBorder flex justify-around p-2 z-40 pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.02)] dark:shadow-none">
         <button class="nav-item active flex flex-col items-center justify-center p-2 rounded-xl transition" data-view="home">
             <span class="material-symbols-rounded !text-[28px]">home</span>
         </button>
@@ -91,62 +93,101 @@
     </button>
 
     <!-- Post Compose Modal -->
-    <div id="compose-modal" class="fixed inset-0 bg-white md:bg-black/40 md:backdrop-blur-sm z-50 flex flex-col md:items-center md:pt-16 opacity-0 pointer-events-none transition-opacity duration-200">
-        <div class="bg-white w-full h-full md:h-auto md:max-w-[600px] md:rounded-2xl shadow-xl flex flex-col md:transform md:-translate-y-4 transition-transform duration-200" id="compose-modal-content">
-            <div class="flex justify-between items-center px-4 py-2 border-b border-borderBase md:border-none md:pt-4">
-                <button id="close-compose-btn" class="p-2 rounded-full hover:bg-gray-100 transition flex items-center justify-center"><span class="material-symbols-rounded">close</span></button>
+    <div id="compose-modal" class="fixed inset-0 bg-white dark:bg-darkBg md:bg-black/40 md:dark:bg-black/60 md:backdrop-blur-sm z-50 flex flex-col md:items-center md:pt-16 opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-white dark:bg-darkBg w-full h-full md:h-auto md:max-w-[600px] md:rounded-2xl shadow-xl border dark:border-darkBorder flex flex-col md:transform md:-translate-y-4 transition-transform duration-200" id="compose-modal-content">
+            <div class="flex justify-between items-center px-4 py-2 border-b border-borderBase dark:border-darkBorder md:border-transparent md:pt-4">
+                <button id="close-compose-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition flex items-center justify-center"><span class="material-symbols-rounded">close</span></button>
                 <div class="flex gap-2">
-                    <button id="draft-compose-btn" class="text-primary font-bold px-4 py-1.5 rounded-full hover:bg-blue-50 transition text-[14px]">下書き保存</button>
-                    <button id="submit-compose-btn" class="bg-primary text-white font-bold px-5 py-1.5 rounded-full hover:bg-blue-600 disabled:opacity-50 transition shadow-sm text-[15px]" disabled>投稿する</button>
+                    <button id="draft-list-btn" class="text-primary font-bold px-4 py-1.5 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/30 transition text-[14px]">下書き</button>
+                    <button id="submit-compose-btn" class="bg-primary text-white font-bold px-5 py-1.5 rounded-full hover:bg-blue-600 disabled:opacity-50 transition shadow-sm text-[15px]" disabled>投稿</button>
                 </div>
             </div>
             
             <div class="flex gap-3 p-4 flex-1 md:flex-none md:min-h-[160px] overflow-y-auto">
-                <div class="w-10 h-10 bg-gray-200 rounded-full flex-shrink-0 overflow-hidden" id="compose-avatar">
-                </div>
+                <div class="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex-shrink-0 overflow-hidden" id="compose-avatar"></div>
                 <div class="flex-1 flex flex-col">
-                    <div id="reply-context" class="hidden text-textSub text-sm flex gap-1 items-center mb-1"><span class="material-symbols-rounded !text-[16px]">reply</span> <span id="reply-to-text"></span></div>
-                    <textarea id="compose-input" maxlength="500" placeholder="いまどうしてる？" class="w-full flex-1 md:min-h-[100px] resize-none outline-none text-[20px] placeholder:text-textSub bg-transparent mt-1"></textarea>
+                    <div id="reply-context" class="hidden text-textSub dark:text-darkTextSub text-sm flex gap-1 items-center mb-1">
+                        <span class="material-symbols-rounded !text-[16px]">reply</span> <span id="reply-to-text"></span>
+                    </div>
+                    <!-- Overlay Textarea setup for Syntax Highlighting -->
+                    <div class="relative w-full flex-1 md:min-h-[100px] mt-1 text-[20px] font-sans">
+                        <div id="compose-highlight" class="absolute inset-0 whitespace-pre-wrap break-words pointer-events-none text-transparent m-0 p-0 overflow-hidden"></div>
+                        <textarea id="compose-input" maxlength="500" placeholder="いまどうしてる？" class="absolute inset-0 w-full h-full resize-none outline-none dark:placeholder:text-darkTextSub text-textMain dark:text-darkTextMain z-10 m-0 p-0 border-none bg-transparent overflow-y-auto"></textarea>
+                    </div>
                 </div>
             </div>
             
-            <div class="px-4 pb-4 flex justify-between items-center border-t border-borderBase/50 pt-3">
+            <div class="px-4 pb-4 flex justify-between items-center border-t border-borderBase/50 dark:border-darkBorder/50 pt-3">
                 <div class="flex gap-1 text-primary">
-                    <button type="button" class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-blue-50 transition"><span class="material-symbols-rounded pb-0.5">image</span></button>
+                    <button type="button" class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/30 transition"><span class="material-symbols-rounded pb-0.5">image</span></button>
                 </div>
-                <span id="compose-char-count" class="text-sm text-textSub font-mono font-medium opacity-80">0 / 500</span>
+                <span id="compose-char-count" class="text-sm text-textSub dark:text-darkTextSub font-mono font-medium opacity-80">0 / 500</span>
             </div>
         </div>
     </div>
 
+    <!-- Drafts List Modal Sub-view -->
+    <div id="drafts-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex flex-col items-center pt-10 md:pt-20 opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-white dark:bg-darkBg w-full max-w-[500px] h-[80vh] rounded-t-2xl md:rounded-b-2xl shadow-2xl border dark:border-darkBorder flex flex-col transform translate-y-full md:translate-y-0 transition-transform duration-300" id="drafts-modal-content">
+            <div class="flex justify-between items-center px-4 py-3 border-b border-borderBase dark:border-darkBorder">
+                <h3 class="font-bold text-lg">下書き (最大30件)</h3>
+                <button id="close-drafts-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition"><span class="material-symbols-rounded">close</span></button>
+            </div>
+            <div id="drafts-list" class="flex-1 overflow-y-auto p-2"></div>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="profile-edit-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-white dark:bg-darkBg w-full max-w-sm rounded-2xl shadow-xl p-6 m-4 transform scale-95 transition-transform duration-200" id="profile-edit-content">
+            <h3 class="font-bold text-xl mb-4">プロフィール編集</h3>
+            <form id="profile-edit-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">表示名</label>
+                    <input type="text" id="edit-display-name" class="w-full border border-gray-300 dark:border-darkBorder rounded-lg p-2 outline-none dark:bg-gray-800 focus:ring-2 focus:ring-primary">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">アイコン画像のURL</label>
+                    <input type="url" id="edit-avatar-url" placeholder="https://..." class="w-full border border-gray-300 dark:border-darkBorder rounded-lg p-2 outline-none dark:bg-gray-800 focus:ring-2 focus:ring-primary">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">自己紹介</label>
+                    <textarea id="edit-bio" class="w-full border border-gray-300 dark:border-darkBorder rounded-lg p-2 h-20 outline-none dark:bg-gray-800 focus:ring-2 focus:ring-primary resize-none"></textarea>
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button type="button" id="close-profile-edit" class="flex-1 bg-gray-200 dark:bg-gray-700 text-textMain dark:text-darkTextMain py-2 rounded-full font-bold">キャンセル</button>
+                    <button type="submit" class="flex-1 bg-primary text-white py-2 rounded-full font-bold">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Login Modal -->
-    <div id="login-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
-        <div class="bg-white w-full max-w-sm rounded-2xl shadow-xl p-6 transform scale-95 transition-transform duration-300" id="login-modal-content">
+    <div id="login-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white dark:bg-darkBg w-full max-w-sm rounded-2xl shadow-xl p-6 transform scale-95 transition-transform duration-300 border dark:border-darkBorder" id="login-modal-content">
             <div class="flex justify-between items-center mb-5">
                 <h3 class="font-bold text-xl">Blueskyでログイン</h3>
-                <button id="close-login-btn" class="text-gray-400 hover:text-gray-600">
+                <button id="close-login-btn" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                     <span class="material-symbols-rounded">close</span>
                 </button>
             </div>
             
             <form id="login-form" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-textMain mb-1">ハンドル名</label>
-                    <input type="text" id="bsky-handle" placeholder="your.bsky.social" class="w-full border border-gray-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all">
+                    <label class="block text-sm font-medium mb-1">ハンドル名</label>
+                    <input type="text" id="bsky-handle" placeholder="your.bsky.social" class="w-full border border-gray-300 dark:border-darkBorder dark:bg-gray-800 rounded-lg p-3 outline-none focus:ring-2 focus:ring-primary transition-all">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-textMain mb-1">アプリパスワード</label>
-                    <input type="password" id="bsky-app-password" placeholder="xxxx-xxxx-xxxx-xxxx" class="w-full border border-gray-300 rounded-lg p-3 outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all">
-                    <p class="text-[11px] text-textSub mt-2">Blueskyの [設定] ＞ [高度な設定] ＞ [アプリパスワード] から生成したものを利用してください。</p>
+                    <label class="block text-sm font-medium mb-1">アプリパスワード</label>
+                    <input type="password" id="bsky-app-password" placeholder="xxxx-xxxx-xxxx-xxxx" class="w-full border border-gray-300 dark:border-darkBorder dark:bg-gray-800 rounded-lg p-3 outline-none focus:ring-2 focus:ring-primary transition-all">
                 </div>
                 
                 <div class="pt-2">
-                    <button type="submit" id="login-submit-btn" class="w-full bg-black text-white font-bold py-3 rounded-full hover:bg-gray-800 transition shadow-md flex justify-center items-center">
+                    <button type="submit" id="login-submit-btn" class="w-full bg-textMain dark:bg-darkTextMain text-bgBase dark:text-darkBg font-bold py-3 rounded-full hover:opacity-80 transition shadow-md flex justify-center items-center">
                         <span>ログイン</span>
-                        <div id="login-spinner" class="ml-2 w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin hidden"></div>
+                        <div id="login-spinner" class="ml-2 w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin hidden"></div>
                     </button>
-                    <!-- モックでテスト用 -->
-                    <button type="button" id="mock-login-btn" class="w-full bg-blue-50 text-primary font-bold py-3 rounded-full hover:bg-blue-100 transition mt-2">
+                    <button type="button" id="mock-login-btn" class="w-full bg-blue-50 dark:bg-blue-900/30 text-primary font-bold py-3 rounded-full hover:bg-blue-100 transition mt-2">
                         （テスト）モックログイン
                     </button>
                 </div>
