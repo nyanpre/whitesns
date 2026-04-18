@@ -120,3 +120,12 @@ input, textarea {
 .pb-safe {
     padding-bottom: env(safe-area-inset-bottom, 20px);
 }
+
+/* Mention and Hashtag formatting */
+.mention, .hashtag {
+    color: #1d9bf0;
+    cursor: pointer;
+}
+.mention:hover, .hashtag:hover {
+    text-decoration: underline;
+}
