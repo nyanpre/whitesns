@@ -1,17 +1,18 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- Configuration ---
     const API_BASE = "https://nyanpre-whitesns-api.hf.space";
-    
+
     // --- State Management ---
     let currentUser = JSON.parse(localStorage.getItem('whiteSNS_user')) || null;
     let token = localStorage.getItem('whiteSNS_token') || null;
     let bookmarks = JSON.parse(localStorage.getItem('whiteSNS_bookmarks')) || [];
     let drafts = JSON.parse(localStorage.getItem('whiteSNS_drafts')) || [];
-    
+
     let SERVER_POSTS = [];
     let viewedUserProfile = null;
     let currentView = 'home';
     let replyTargetPost = null;
+    let notifPollInterval = null;
 
     // --- DOM Elements ---
     const headerTitle = document.getElementById('header-title');
@@ -22,42 +23,49 @@ document.addEventListener('DOMContentLoaded', () => {
     const feed = document.getElementById('feed');
     const navItems = document.querySelectorAll('.nav-item');
     const tabItems = document.querySelectorAll('.tab-item');
-
-    // Theme Elements
     const themeToggle = document.getElementById('theme-toggle');
     const themeIcon = document.getElementById('theme-icon');
-
-    // Modals
     const loginModal = document.getElementById('login-modal');
     const composeModal = document.getElementById('compose-modal');
     const draftsModal = document.getElementById('drafts-modal');
     const profileEditModal = document.getElementById('profile-edit-modal');
-    
-    // Compose Elements
     const composeInput = document.getElementById('compose-input');
     const composeHighlight = document.getElementById('compose-highlight');
     const submitComposeBtn = document.getElementById('submit-compose-btn');
     const draftListBtn = document.getElementById('draft-list-btn');
 
+    // --- Toast Notifications ---
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `<span>${icons[type] || '💬'}</span><span>${message}</span>`;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.classList.add('toast-out');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
     // --- Helpers ---
     function saveLocalState() {
-        if(currentUser) localStorage.setItem('whiteSNS_user', JSON.stringify(currentUser));
+        if (currentUser) localStorage.setItem('whiteSNS_user', JSON.stringify(currentUser));
         localStorage.setItem('whiteSNS_drafts', JSON.stringify(drafts));
         localStorage.setItem('whiteSNS_bookmarks', JSON.stringify(bookmarks));
-        if(token) localStorage.setItem('whiteSNS_token', token);
+        if (token) localStorage.setItem('whiteSNS_token', token);
     }
 
     async function apiFetch(endpoint, method = 'GET', body = null) {
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
-        
         const options = { method, headers };
         if (body) options.body = JSON.stringify(body);
-        
         try {
             const res = await fetch(`${API_BASE}${endpoint}`, options);
             if (!res.ok) {
-                if(res.status === 401) { logout(); return null; }
+                if (res.status === 401) { logout(); return null; }
                 throw new Error(`API Error: ${res.status}`);
             }
             return await res.json();
@@ -72,20 +80,40 @@ document.addEventListener('DOMContentLoaded', () => {
         token = null;
         localStorage.removeItem('whiteSNS_user');
         localStorage.removeItem('whiteSNS_token');
+        if (notifPollInterval) { clearInterval(notifPollInterval); notifPollInterval = null; }
         renderHeaderState();
         renderView('home');
         document.getElementById('login-modal').classList.add('modal-open');
     }
 
     function formatTimeAgo(dateString) {
-        if(!dateString) return "不明";
+        if (!dateString) return "不明";
         const d = new Date(dateString);
-        if(isNaN(d)) return "たった今";
+        if (isNaN(d)) return "たった今";
         const diff = Math.floor((new Date() - d) / 1000);
         if (diff < 60) return "たった今";
-        if (diff < 3600) return `${Math.floor(diff/60)}分前`;
-        if (diff < 86400) return `${Math.floor(diff/3600)}時間前`;
-        return `${d.getMonth()+1}月${d.getDate()}日`;
+        if (diff < 3600) return `${Math.floor(diff / 60)}分前`;
+        if (diff < 86400) return `${Math.floor(diff / 3600)}時間前`;
+        return `${d.getMonth() + 1}月${d.getDate()}日`;
+    }
+
+    // --- Notification Badge ---
+    async function updateNotifBadge() {
+        if (!token) return;
+        const res = await apiFetch('/api/notifications/unread_count');
+        const badge = document.getElementById('notif-badge');
+        if (!badge) return;
+        if (res && res.count > 0) {
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    }
+
+    function startNotifPolling() {
+        if (notifPollInterval) clearInterval(notifPollInterval);
+        updateNotifBadge();
+        notifPollInterval = setInterval(updateNotifBadge, 30000);
     }
 
     // --- Dark Mode ---
@@ -102,12 +130,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     initTheme();
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-        if(!localStorage.getItem('theme')) initTheme();
+        if (!localStorage.getItem('theme')) initTheme();
     });
 
     themeToggle.addEventListener('click', () => {
         const isDark = document.documentElement.classList.contains('dark');
-        if(isDark) {
+        if (isDark) {
             document.documentElement.classList.remove('dark');
             localStorage.setItem('theme', 'light');
             themeIcon.textContent = 'dark_mode';
@@ -120,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Format Utils ---
     function formatPostText(text) {
-        if(!text) return '';
+        if (!text) return '';
         let escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         escaped = escaped.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="text-primary font-medium hover:underline" onclick="event.stopPropagation()">$1</a>');
         escaped = escaped.replace(/(#\S+)/g, '<span class="hashtag text-primary font-medium cursor-pointer hover:underline">$1</span>');
@@ -130,11 +158,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function checkOGP(text) {
         const urlMatch = text.match(/(https?:\/\/[^\s]+)/);
-        if(!urlMatch) return '';
+        if (!urlMatch) return '';
         const url = urlMatch[1];
         let hostname = 'リンク';
-        try { hostname = new URL(url).hostname; } catch(e){}
-
+        try { hostname = new URL(url).hostname; } catch (e) { }
         return `
             <a href="${url}" target="_blank" class="block mt-2 mx-1 border border-borderBase/50 dark:border-darkBorder/50 rounded-xl overflow-hidden hover:bg-black/5 dark:hover:bg-white/5 transition" onclick="event.stopPropagation()">
                 <div class="h-24 bg-gradient-to-br from-indigo-100 to-pink-100 dark:from-slate-800 dark:to-slate-700 flex flex-col items-center justify-center text-textSub dark:text-darkTextSub">
@@ -142,11 +169,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="text-[10px] font-mono opacity-80">${hostname}</span>
                 </div>
                 <div class="p-2 bg-white/50 dark:bg-slate-900/50 border-t border-borderBase/50 dark:border-darkBorder/50">
-                    <div class="text-[13px] font-bold truncate mb-0.5">プレビューカード (Mock)</div>
-                    <div class="text-[11px] text-textSub dark:text-darkTextSub line-clamp-1">将来ここにOGP情報が表示されます。</div>
+                    <div class="text-[13px] font-bold truncate mb-0.5">${hostname}</div>
+                    <div class="text-[11px] text-textSub dark:text-darkTextSub line-clamp-1">${url}</div>
                 </div>
             </a>
         `;
+    }
+
+    // --- Skeleton Loading ---
+    function renderSkeleton(count = 5) {
+        return Array.from({ length: count }).map(() => `
+            <div class="skeleton-post">
+                <div class="skeleton-avatar"></div>
+                <div class="flex-1 pt-1">
+                    <div class="skeleton-line" style="width: 40%"></div>
+                    <div class="skeleton-line" style="width: 90%"></div>
+                    <div class="skeleton-line" style="width: 70%"></div>
+                </div>
+            </div>
+        `).join('');
     }
 
     // --- Compose ---
@@ -154,8 +195,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const text = composeInput.value;
         const escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         const highlighted = escaped.replace(/(#[^\s]+)/g, '<span class="text-primary font-medium">$1</span>')
-                                   .replace(/(@[a-zA-Z0-9_.-]+)/g, '<span class="text-primary font-medium">$1</span>')
-                                   + "\u200B"; 
+            .replace(/(@[a-zA-Z0-9_.-]+)/g, '<span class="text-primary font-medium">$1</span>')
+            + "\u200B";
         composeHighlight.innerHTML = highlighted;
     }
 
@@ -165,14 +206,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('compose-char-count').textContent = `${length} / 500`;
         submitComposeBtn.disabled = length === 0 || length > 500;
     });
-    
+
     composeInput.addEventListener('scroll', () => {
         composeHighlight.scrollTop = composeInput.scrollTop;
         composeHighlight.scrollLeft = composeInput.scrollLeft;
     });
 
     function openComposeModal(replyTarget = null) {
-        if(!currentUser) { document.getElementById('login-modal').classList.add('modal-open'); return; }
+        if (!currentUser) { document.getElementById('login-modal').classList.add('modal-open'); return; }
         replyTargetPost = replyTarget;
         document.getElementById('compose-avatar').innerHTML = `<img src="${currentUser.avatar}" alt="Avatar" class="w-full h-full object-cover">`;
         if (replyTarget) {
@@ -186,17 +227,24 @@ document.addEventListener('DOMContentLoaded', () => {
         composeModal.classList.add('modal-open');
         composeInput.focus();
     }
-    
+
     document.getElementById('close-compose-btn').addEventListener('click', () => { composeModal.classList.remove('modal-open'); });
     document.getElementById('fab-post')?.addEventListener('click', () => openComposeModal());
 
     // --- Drafts ---
     draftListBtn.addEventListener('click', () => {
-        if (replyTargetPost) { alert("返信画面では下書き保存できません。"); return; }
+        if (replyTargetPost) { showToast('返信画面では下書き保存できません。', 'info'); return; }
         const text = composeInput.value.trim();
-        if (text) { 
-            if (drafts.length >= 30) { alert("下書きがいっぱいです（最大30件）。"); } 
-            else { drafts.unshift({ id: Date.now(), text: text, date: new Date().toLocaleString() }); composeInput.value = ""; updateHighlight(); saveLocalState(); }
+        if (text) {
+            if (drafts.length >= 30) {
+                showToast('下書きが上限（30件）に達しています。古い下書きを削除してください。', 'error');
+            } else {
+                drafts.unshift({ id: Date.now(), text: text, date: new Date().toLocaleString() });
+                composeInput.value = "";
+                updateHighlight();
+                saveLocalState();
+                showToast('下書きを保存しました ✓', 'success');
+            }
         }
         renderDraftsList();
         draftsModal.classList.add('modal-open');
@@ -206,7 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderDraftsList() {
         const list = document.getElementById('drafts-list');
-        if(drafts.length === 0) { list.innerHTML = `<div class="p-8 text-center text-textSub font-bold opacity-50 text-[13px]">下書きはありません</div>`; return; }
+        if (drafts.length === 0) { list.innerHTML = `<div class="p-8 text-center text-textSub font-bold opacity-50 text-[13px]">下書きはありません</div>`; return; }
         list.innerHTML = drafts.map(d => `
             <div class="px-4 py-3 border-b border-borderBase/50 dark:border-darkBorder/50 hover:bg-black/5 dark:hover:bg-white/5 transition flex items-start gap-2 cursor-pointer draft-item" data-id="${d.id}">
                 <div class="flex-1">
@@ -219,13 +267,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         document.querySelectorAll('.draft-item').forEach(el => {
             el.addEventListener('click', (e) => {
-                if(e.target.closest('.delete-draft')) return;
+                if (e.target.closest('.delete-draft')) return;
                 const id = parseInt(el.getAttribute('data-id'));
                 const d = drafts.find(x => x.id === id);
-                if(d) {
+                if (d) {
                     composeInput.value = d.text;
                     composeInput.dispatchEvent(new Event('input'));
-                    drafts = drafts.filter(x => x.id !== parseInt(id));
+                    drafts = drafts.filter(x => x.id !== id);
                     saveLocalState();
                     document.getElementById('close-drafts-btn').click();
                 }
@@ -235,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const id = parseInt(btn.getAttribute('data-id'));
-                drafts = drafts.filter(x => x.id !== parseInt(id));
+                drafts = drafts.filter(x => x.id !== id);
                 saveLocalState();
                 renderDraftsList();
             });
@@ -244,9 +292,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Submit Post
     submitComposeBtn.addEventListener('click', async () => {
-        if(!currentUser) return;
+        if (!currentUser) return;
         const text = composeInput.value.trim();
-        if(text === '') return;
+        if (text === '') return;
 
         submitComposeBtn.disabled = true;
         submitComposeBtn.textContent = '送信中...';
@@ -255,30 +303,32 @@ document.addEventListener('DOMContentLoaded', () => {
         if (replyTargetPost) payload.parent_id = replyTargetPost.id;
 
         const res = await apiFetch('/api/posts', 'POST', payload);
-        
+
         submitComposeBtn.disabled = false;
         submitComposeBtn.textContent = '投稿する';
 
-        if(res && res.success) {
+        if (res && res.success) {
             document.getElementById('close-compose-btn').click();
             composeInput.value = "";
-            refreshFeed(); // Fetch latest natively
+            showToast('投稿しました ✓', 'success');
+            refreshFeed();
         } else {
-            alert("投稿に失敗しました。サーバーの接続を確認してください。");
+            showToast('投稿に失敗しました。サーバーの接続を確認してください。', 'error');
         }
     });
 
     // --- Profile Edit ---
     function openProfileEdit() {
-        if(!currentUser) return;
+        if (!currentUser) return;
         document.getElementById('edit-display-name').value = currentUser.displayName;
         document.getElementById('edit-avatar-url').value = currentUser.avatar;
+        document.getElementById('edit-banner-url').value = currentUser.banner || '';
         document.getElementById('edit-bio').value = currentUser.bio || "";
         profileEditModal.classList.add('modal-open');
     }
-    
+
     document.getElementById('close-profile-edit').addEventListener('click', () => profileEditModal.classList.remove('modal-open'));
-    
+
     document.getElementById('profile-edit-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const btn = document.querySelector('#profile-edit-form button[type="submit"]');
@@ -288,30 +338,33 @@ document.addEventListener('DOMContentLoaded', () => {
         const payload = {
             display_name: document.getElementById('edit-display-name').value,
             avatar: document.getElementById('edit-avatar-url').value || `https://ui-avatars.com/api/?name=${currentUser.displayName}&background=random`,
+            banner: document.getElementById('edit-banner-url').value || '',
             bio: document.getElementById('edit-bio').value
         };
 
         const res = await apiFetch('/api/profile', 'PUT', payload);
-        
+
         btn.disabled = false;
         btn.textContent = "保存";
 
-        if(res && res.success) {
+        if (res && res.success) {
             currentUser.displayName = payload.display_name;
             currentUser.avatar = payload.avatar;
+            currentUser.banner = payload.banner;
             currentUser.bio = payload.bio;
             saveLocalState();
             document.getElementById('close-profile-edit').click();
+            showToast('プロフィールを更新しました ✓', 'success');
             renderHeaderState();
-            if(currentView === 'profile') renderView('profile');
+            if (currentView === 'profile') renderView('profile');
         } else {
-            alert("プロフィール更新に失敗しました。");
+            showToast('プロフィール更新に失敗しました。', 'error');
         }
     });
 
     // --- Login ---
     document.getElementById('close-login-btn').addEventListener('click', () => loginModal.classList.remove('modal-open'));
-    
+
     // Auto-fill remembered credentials
     const savedHandle = localStorage.getItem('whiteSNS_auth_handle');
     const savedPass = localStorage.getItem('whiteSNS_auth_pass');
@@ -326,14 +379,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const spinner = document.getElementById('login-spinner');
         const errorDiv = document.getElementById('login-error');
 
-        if(!handle || !password) return;
-        
+        if (!handle || !password) return;
+
         errorDiv.classList.add('hidden');
         submitBtn.disabled = true;
         spinner.classList.remove('hidden');
 
         try {
-            // FastAPI backend login API
             const res = await fetch(`${API_BASE}/api/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -343,41 +395,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (data.success) {
                 token = data.token;
-                
-                // Remember credentials for next time
+
                 localStorage.setItem('whiteSNS_auth_handle', handle);
                 localStorage.setItem('whiteSNS_auth_pass', password);
-                
-                // Get fresh profile from DB created by login
+
                 const profRes = await fetch(`${API_BASE}/api/profile/${data.handle}`);
-                if(profRes.ok) {
+                if (profRes.ok) {
                     const profData = await profRes.json();
                     currentUser = {
                         handle: profData.handle,
                         displayName: profData.display_name,
-                        avatar: profData.avatar,
-                        bio: profData.bio
+                        avatar: profData.avatar || `https://ui-avatars.com/api/?name=${profData.handle}&background=random`,
+                        bio: profData.bio,
+                        banner: profData.banner || ''
                     };
                 } else {
-                    // Fallback just in case
                     currentUser = {
                         handle: data.handle,
                         displayName: data.handle,
                         avatar: `https://ui-avatars.com/api/?name=${data.handle}&background=random`,
-                        bio: ""
+                        bio: "",
+                        banner: ""
                     };
                 }
 
                 saveLocalState();
                 document.getElementById('close-login-btn').click();
                 renderHeaderState();
+                startNotifPolling();
+                showToast(`ようこそ、${currentUser.displayName}さん！`, 'success');
                 refreshFeed();
             } else {
                 console.error("Login failed:", data);
                 errorDiv.textContent = data.error || "ログインに失敗しました。";
                 errorDiv.classList.remove('hidden');
             }
-        } catch(err) {
+        } catch (err) {
             console.error("Connection error:", err);
             errorDiv.textContent = "サーバーに接続できません。";
             errorDiv.classList.remove('hidden');
@@ -389,11 +442,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Mock Login trigger
     document.getElementById('mock-login-btn').addEventListener('click', () => {
-        alert("フェーズ2からは、バックエンドとのセキュリティ通信が必要になるためモックログイン機能は廃止されました。正しいBlueskyアカウントでログインしてください。");
+        showToast('モックログインは廃止されました。Blueskyアカウントでログインしてください。', 'info');
     });
 
     function renderHeaderState() {
-        if(currentUser) {
+        if (currentUser) {
             headerAvatar.classList.remove('hidden');
             headerAvatar.innerHTML = `<img src="${currentUser.avatar}" alt="Avatar" class="w-full h-full object-cover">`;
             document.getElementById('fab-post')?.classList.remove('hidden');
@@ -405,7 +458,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Rendering ---
     function updatePostSection() {
-        if(currentUser) {
+        if (currentUser) {
             postSection.innerHTML = `
                 <div class="flex gap-2 p-2 px-3 items-center" onclick="document.getElementById('fab-post').click()">
                     <div class="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-black/5 dark:border-white/5 shadow-sm">
@@ -413,7 +466,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <div class="text-textSub dark:text-darkTextSub text-[14px] ml-1 opacity-70">いまどうしてる？</div>
                 </div>`;
-            postSection.classList.remove('hidden');    
+            postSection.classList.remove('hidden');
         } else {
             postSection.innerHTML = `
                 <div class="py-4 text-center">
@@ -423,66 +476,101 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function updateProfileHeader() {
+    async function updateProfileHeader() {
         const targetUser = viewedUserProfile || currentUser;
-        if(targetUser) {
-            const isMe = targetUser.handle === currentUser?.handle;
-            profileHeader.innerHTML = `
-                <div class="h-28 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 relative">
-                    <div class="absolute -bottom-10 left-4 w-20 h-20 bg-white dark:bg-slate-900 rounded-full p-1 shadow-md">
-                        <img src="${targetUser.avatar}" alt="Avatar" class="w-full h-full object-cover rounded-full">
-                    </div>
-                    ${isMe ? `
-                    <button class="absolute -bottom-8 right-3 border border-borderBase dark:border-darkBorder bg-white/80 dark:bg-slate-900/80 px-3 py-1.5 rounded-full font-bold hover:bg-black/5 text-[12px]" onclick="document.getElementById('profile-edit-btn').click()">プロフィールを編集</button>
-                    <button id="profile-edit-btn" class="hidden"></button>
-                    ` : ''}
+        if (!targetUser) { profileTabs.classList.add('hidden'); return; }
+
+        const isMe = targetUser.handle === currentUser?.handle;
+        const bannerStyle = targetUser.banner
+            ? `background-image: url('${targetUser.banner}'); background-size: cover; background-position: center;`
+            : '';
+        const bannerClass = targetUser.banner ? '' : 'bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500';
+
+        profileHeader.innerHTML = `
+            <div class="h-28 ${bannerClass} relative" style="${bannerStyle}">
+                <div class="absolute -bottom-10 left-4 w-20 h-20 bg-white dark:bg-slate-900 rounded-full p-1 shadow-md">
+                    <img src="${targetUser.avatar || `https://ui-avatars.com/api/?name=${targetUser.handle}&background=random`}" alt="Avatar" class="w-full h-full object-cover rounded-full">
                 </div>
-                <div class="pt-12 px-4 pb-4">
-                    <h2 class="font-bold text-[18px]">${targetUser.displayName}</h2>
-                    <p class="text-textSub dark:text-darkTextSub text-[12px] font-mono mt-0.5 opacity-80">${targetUser.handle}</p>
-                    <p class="mt-2 text-[14px] leading-snug whitespace-pre-wrap">${targetUser.bio || '自己紹介はまだありません。'}</p>
-                </div>`;
-            profileTabs.classList.remove('hidden');
-            // Allow fetching actual profile when viewing someone else
-            if (!isMe && (!viewedUserProfile.displayName || viewedUserProfile.displayName === viewedUserProfile.handle)) {
-                // Fetch real profile async
-                apiFetch(`/api/profile/${targetUser.handle}`).then(res => {
-                    if (res) {
-                        viewedUserProfile = {
-                            handle: res.handle,
-                            displayName: res.display_name,
-                            avatar: res.avatar,
-                            bio: res.bio
-                        };
-                        updateProfileHeader();
-                    }
-                });
-            }
-        } else {
-            profileTabs.classList.add('hidden');
+                ${isMe ? `
+                <button class="absolute -bottom-8 right-3 border border-borderBase dark:border-darkBorder bg-white/80 dark:bg-slate-900/80 px-3 py-1.5 rounded-full font-bold hover:bg-black/5 text-[12px]" onclick="document.getElementById('profile-edit-btn').click()">プロフィールを編集</button>
+                <button id="profile-edit-btn" class="hidden"></button>
+                ` : `
+                <button id="follow-btn" class="absolute -bottom-8 right-3 bg-gradient-to-r from-primary to-secondary text-white px-4 py-1.5 rounded-full font-bold text-[12px] shadow-md" data-handle="${targetUser.handle}">フォロー</button>
+                `}
+            </div>
+            <div class="pt-12 px-4 pb-3">
+                <h2 class="font-bold text-[18px]">${targetUser.displayName || targetUser.handle}</h2>
+                <p class="text-textSub dark:text-darkTextSub text-[12px] font-mono mt-0.5 opacity-80">${targetUser.handle}</p>
+                <p class="mt-2 text-[14px] leading-snug whitespace-pre-wrap">${targetUser.bio || '自己紹介はまだありません。'}</p>
+                <div id="follow-stats" class="flex gap-4 mt-2 text-[13px] text-textSub dark:text-darkTextSub">
+                    <span class="skeleton-line" style="width:100px; display:inline-block;"></span>
+                </div>
+            </div>`;
+
+        profileTabs.classList.remove('hidden');
+
+        // Fetch follow info
+        const followInfo = await apiFetch(`/api/follows/${targetUser.handle}`);
+        const statsEl = document.getElementById('follow-stats');
+        if (statsEl && followInfo) {
+            statsEl.innerHTML = `
+                <span><strong>${followInfo.followers}</strong> フォロワー</span>
+                <span class="opacity-40">·</span>
+                <span><strong>${followInfo.following}</strong> フォロー中</span>`;
         }
+
+        const followBtn = document.getElementById('follow-btn');
+        if (followBtn && followInfo) {
+            if (followInfo.is_following) {
+                followBtn.textContent = 'フォロー中';
+                followBtn.className = 'absolute -bottom-8 right-3 border border-borderBase dark:border-darkBorder bg-white/80 dark:bg-slate-900/80 text-textMain dark:text-white px-4 py-1.5 rounded-full font-bold text-[12px]';
+            }
+            followBtn.addEventListener('click', async () => {
+                const res = await apiFetch('/api/follows', 'POST', { target_handle: targetUser.handle });
+                if (res) {
+                    showToast(res.action === 'followed' ? `${targetUser.handle} をフォローしました ✓` : 'フォローを解除しました', res.action === 'followed' ? 'success' : 'info');
+                    updateProfileHeader();
+                }
+            });
+        }
+
+        // Fetch full profile for other users if needed
+        if (!isMe && (!viewedUserProfile?.displayName || viewedUserProfile.displayName === viewedUserProfile.handle)) {
+            const res = await apiFetch(`/api/profile/${targetUser.handle}`);
+            if (res && res.display_name) {
+                viewedUserProfile = {
+                    handle: res.handle,
+                    displayName: res.display_name,
+                    avatar: res.avatar || `https://ui-avatars.com/api/?name=${res.handle}&background=random`,
+                    bio: res.bio,
+                    banner: res.banner || ''
+                };
+                updateProfileHeader();
+            }
+        }
+
+        // Profile edit button wire-up
+        document.getElementById('profile-edit-btn')?.addEventListener('click', () => openProfileEdit());
     }
 
     function renderFeed(posts) {
-        if(!posts || posts.length === 0) {
+        if (!posts || posts.length === 0) {
             feed.innerHTML = `<div class="p-8 text-center text-textSub text-[13px] font-bold opacity-50">まだ投稿がありません</div>`;
             return;
         }
 
         feed.innerHTML = posts.map(post => {
-            // Avatars and Users now come directly from the DB JOIN in /api/posts !
             const avatar = post.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user || post.handle)}&background=random`;
             const isBookmarked = bookmarks.includes(post.id);
             let parentHtml = '';
 
             if (post.parent_id) {
-                // To fetch parent, ideally backend provides it, but we can search local list for mock UI
                 const parent = SERVER_POSTS.find(p => p.id === post.parent_id);
                 if (parent) {
                     parentHtml = `<div class="text-[11px] text-secondary dark:text-pink-400 mb-1 ml-10 font-medium"><span class="material-symbols-rounded !text-[13px] align-text-bottom">reply</span> <span class="mention cursor-pointer hover:underline" data-handle="${parent.handle}">返信先: ${parent.handle}</span></div>`;
                 }
             }
-            
+
             return `
             <article class="px-4 py-3 border-b border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer relative group/post" data-post-id="${post.id}">
                 ${parentHtml}
@@ -499,7 +587,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                         <p class="text-[14px] leading-snug whitespace-pre-wrap">${formatPostText(post.text)}</p>
                         ${checkOGP(post.text)}
-                        
+
                         <div class="flex justify-between items-center mt-2.5 text-textSub dark:text-darkTextSub pr-4 opacity-80 group-hover/post:opacity-100 transition-opacity">
                             <button class="flex items-center gap-1 hover:text-primary group transition action-btn" data-action="reply">
                                 <div class="w-7 h-7 flex items-center justify-center rounded-full group-hover:bg-primary/10 transition pointer-events-none"><span class="material-symbols-rounded !text-[18px]">chat_bubble</span></div>
@@ -516,25 +604,67 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
             </article>
-        `}).join('');
+        `;
+        }).join('');
     }
 
     async function refreshFeed() {
-        feed.innerHTML = '<div class="flex justify-center p-8"><div class="w-8 h-8 border-[3px] border-primary border-t-transparent rounded-full animate-spin"></div></div>';
-        
+        feed.innerHTML = renderSkeleton(5);
+
         const data = await apiFetch('/api/posts');
         if (data) {
             SERVER_POSTS = data;
         }
-        
+
         renderFeed(SERVER_POSTS);
+    }
+
+    // --- Notifications View ---
+    async function renderNotifications() {
+        feed.innerHTML = renderSkeleton(3);
+        if (!currentUser) {
+            feed.innerHTML = '<div class="p-8 text-center text-[13px] font-bold opacity-50">通知を見るにはログインしてください</div>';
+            return;
+        }
+        // Reset badge
+        const badge = document.getElementById('notif-badge');
+        if (badge) badge.classList.add('hidden');
+
+        const data = await apiFetch('/api/notifications');
+        if (!data || data.length === 0) {
+            feed.innerHTML = '<div class="p-8 text-center text-[13px] font-bold opacity-50">まだ通知はありません</div>';
+            return;
+        }
+
+        const typeLabels = {
+            mention: `<span class="text-primary font-bold">メンション</span> しました`,
+            like: `あなたの投稿に <span class="text-secondary font-bold">いいね</span> しました`,
+            reply: `あなたの投稿に <span class="text-primary font-bold">返信</span> しました`,
+            follow: `あなたを <span class="text-primary font-bold">フォロー</span> しました`,
+        };
+        const typeIcons = { mention: 'alternate_email', like: 'favorite', reply: 'chat_bubble', follow: 'person_add' };
+        const typeColors = { mention: 'text-primary', like: 'text-secondary', reply: 'text-primary', follow: 'text-green-500' };
+
+        feed.innerHTML = data.map(n => `
+            <div class="px-4 py-3 border-b border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 transition flex gap-3 cursor-pointer ${n.is_read ? 'opacity-70' : ''}" data-post-id="${n.post_id || ''}">
+                <div class="w-8 flex justify-center mt-1">
+                    <span class="material-symbols-rounded ${typeColors[n.type] || 'text-primary'} !text-xl">${typeIcons[n.type] || 'notifications'}</span>
+                </div>
+                <div class="flex-1">
+                    <p class="text-[13px]">
+                        <span class="mention font-bold cursor-pointer hover:underline" data-handle="${n.actor_handle}">${n.actor_handle}</span> さんが ${typeLabels[n.type] || '通知を送りました'}
+                    </p>
+                    <p class="text-[11px] text-textSub dark:text-darkTextSub mt-0.5">${formatTimeAgo(n.created_at)}</p>
+                </div>
+            </div>
+        `).join('');
     }
 
     // Routing
     navItems.forEach(item => {
         item.addEventListener('click', () => {
             const view = item.getAttribute('data-view');
-            if (view === 'home' && currentView === 'home') { refreshFeed(); window.scrollTo({top: 0, behavior: 'smooth'}); return; }
+            if (view === 'home' && currentView === 'home') { refreshFeed(); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
             navItems.forEach(i => i.classList.remove('active'));
             item.classList.add('active');
             viewedUserProfile = null;
@@ -548,31 +678,22 @@ document.addEventListener('DOMContentLoaded', () => {
         profileHeader.classList.add('hidden');
         profileTabs.classList.add('hidden');
         feed.innerHTML = '';
-        window.scrollTo({top: 0, behavior: 'instant'});
+        window.scrollTo({ top: 0, behavior: 'instant' });
 
         if (view === 'home') {
             headerTitle.textContent = 'ホーム';
             updatePostSection();
-            if(SERVER_POSTS.length > 0) renderFeed(SERVER_POSTS);
-            else refreshFeed(); // Fetch automatically if empty
+            if (SERVER_POSTS.length > 0) renderFeed(SERVER_POSTS);
+            else refreshFeed();
         } else if (view === 'profile') {
             const targetUser = viewedUserProfile || currentUser;
             headerTitle.textContent = 'プロフィール';
             profileHeader.classList.remove('hidden');
             updateProfileHeader();
-            if(targetUser) updateTabContent('posts', targetUser);
+            if (targetUser) updateTabContent('posts', targetUser);
         } else if (view === 'notifications') {
             headerTitle.textContent = '通知';
-            if(currentUser) {
-                feed.innerHTML = `
-                    <div class="px-4 py-3 border-b border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 transition flex gap-3">
-                        <div class="w-8 flex justify-center mt-1"><span class="material-symbols-rounded text-primary !text-2xl">chat_bubble</span></div>
-                        <div class="flex-1">
-                            <img src="https://ui-avatars.com/api/?name=Guest&background=random" class="w-8 h-8 rounded-full mb-1.5 border border-white dark:border-darkBorder">
-                            <p class="text-[13px]"><span class="font-bold">ゲストユーザー</span>さんがあなたの投稿に返信しました</p>
-                        </div>
-                    </div>`;
-            } else { feed.innerHTML = '<div class="p-8 text-center text-[13px] font-bold opacity-50">通知を見るにはログインしてください</div>'; }
+            renderNotifications();
         } else if (view === 'search') {
             headerTitle.textContent = '検索';
             feed.innerHTML = `
@@ -585,7 +706,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div id="srch-res"><h3 class="font-bold text-[14px] px-3 mb-2 opacity-80">トレンド</h3><div class="px-3"><span class="hashtag text-primary font-bold cursor-pointer hover:underline text-[15px]">#初めての投稿</span></div></div>
             `;
             document.getElementById('srch').addEventListener('keydown', (e) => {
-                if(e.key === 'Enter') {
+                if (e.key === 'Enter') {
                     const q = e.target.value.toLowerCase();
                     const r = SERVER_POSTS.filter(p => p.text.toLowerCase().includes(q));
                     const currentTop = feed.innerHTML;
@@ -600,53 +721,70 @@ document.addEventListener('DOMContentLoaded', () => {
 
     feed.addEventListener('click', async (e) => {
         const profEl = e.target.closest('.avatar-click, .mention');
-        if(profEl) {
+        if (profEl) {
             e.stopPropagation();
-            if(!currentUser) { document.getElementById('login-modal').classList.add('modal-open'); return; }
-            const h = profEl.getAttribute('data-handle');
-            viewedUserProfile = { displayName: h, handle: h, avatar: `https://ui-avatars.com/api/?name=${h}&background=random` }; // Mock initially
+            if (!currentUser) { document.getElementById('login-modal').classList.add('modal-open'); return; }
+            const h = profEl.getAttribute('data-handle')?.replace('@', '');
+            if (!h) return;
+            viewedUserProfile = { displayName: h, handle: h, avatar: `https://ui-avatars.com/api/?name=${h}&background=random`, bio: '', banner: '' };
             navItems.forEach(i => i.classList.remove('active'));
             document.querySelector('.nav-item[data-view="profile"]').classList.add('active');
             renderView('profile');
             return;
         }
 
-        if(e.target.classList.contains('hashtag')) {
+        if (e.target.classList.contains('hashtag')) {
             e.stopPropagation();
             const tag = e.target.textContent;
             navItems.forEach(i => i.classList.remove('active'));
-            const searchBtn = document.querySelector('.nav-item[data-view="search"]');
-            searchBtn.classList.add('active');
+            document.querySelector('.nav-item[data-view="search"]').classList.add('active');
             renderView('search');
             setTimeout(() => {
                 const searchInput = document.getElementById('srch');
-                if(searchInput) {
+                if (searchInput) {
                     searchInput.value = tag;
-                    searchInput.dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter'}));
+                    searchInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
                 }
             }, 50);
             return;
         }
 
+        // Notification click to open post
+        const notifEl = e.target.closest('[data-post-id]');
+        if (notifEl && currentView === 'notifications') {
+            const pid = notifEl.getAttribute('data-post-id');
+            if (pid) {
+                // For now just go home and highlight (future: individual post view)
+                navItems.forEach(i => i.classList.remove('active'));
+                document.querySelector('.nav-item[data-view="home"]').classList.add('active');
+                renderView('home');
+            }
+            return;
+        }
+
         const actBtn = e.target.closest('.action-btn');
-        if(actBtn) {
+        if (actBtn) {
             e.stopPropagation();
-            if(!currentUser) { document.getElementById('login-modal').classList.add('modal-open'); return; }
+            if (!currentUser) { document.getElementById('login-modal').classList.add('modal-open'); return; }
             const pid = parseInt(actBtn.closest('article').getAttribute('data-post-id'));
             const action = actBtn.getAttribute('data-action');
-            if(action === 'bookmark') {
+            if (action === 'bookmark') {
                 const idx = bookmarks.indexOf(pid);
-                if(idx > -1) bookmarks.splice(idx, 1); else bookmarks.push(pid);
+                if (idx > -1) bookmarks.splice(idx, 1); else bookmarks.push(pid);
                 localStorage.setItem('whiteSNS_bookmarks', JSON.stringify(bookmarks));
                 actBtn.classList.toggle('text-primary');
                 actBtn.querySelector('.material-symbols-rounded').classList.toggle('!font-bold');
-                apiFetch('/api/posts/bookmark', 'POST', { post_id: pid }); // Send to backend asynchronously
+                apiFetch('/api/posts/bookmark', 'POST', { post_id: pid });
+                showToast(bookmarks.includes(pid) ? 'ブックマークしました ✓' : 'ブックマークを解除しました', 'info');
             } else if (action === 'like') {
                 const res = await apiFetch('/api/posts/like', 'POST', { post_id: pid });
-                if(res) refreshFeed(); // refresh to show new like count
+                if (res) {
+                    showToast(res.action === 'liked' ? 'いいねしました ❤️' : 'いいねを取り消しました', 'info');
+                    refreshFeed();
+                }
             } else if (action === 'reply') {
                 const post = SERVER_POSTS.find(p => p.id === pid);
-                if(post) openComposeModal(post);
+                if (post) openComposeModal(post);
             }
         }
     });
@@ -659,17 +797,37 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    function updateTabContent(tabName, user) {
-        if(!user) return;
-        if(tabName === 'posts') { renderFeed(SERVER_POSTS.filter(p => p.handle === user.handle)); }
-        else if(tabName === 'bookmarks' && user.handle === currentUser?.handle) { renderFeed(SERVER_POSTS.filter(p => bookmarks.includes(p.id))); }
-        else { feed.innerHTML = `<div class="p-8 text-center text-[13px] font-bold opacity-50">まだありません</div>`; }
+    async function updateTabContent(tabName, user) {
+        if (!user) return;
+        if (tabName === 'posts') {
+            renderFeed(SERVER_POSTS.filter(p => p.handle === user.handle));
+        } else if (tabName === 'likes') {
+            feed.innerHTML = renderSkeleton(3);
+            const data = await apiFetch(`/api/likes/${user.handle}`);
+            if (data) renderFeed(data);
+            else feed.innerHTML = `<div class="p-8 text-center text-[13px] font-bold opacity-50">まだありません</div>`;
+        } else if (tabName === 'bookmarks' && user.handle === currentUser?.handle) {
+            renderFeed(SERVER_POSTS.filter(p => bookmarks.includes(p.id)));
+        } else {
+            feed.innerHTML = `<div class="p-8 text-center text-[13px] font-bold opacity-50">まだありません</div>`;
+        }
     }
 
+    // Header avatar click -> go to own profile
+    headerAvatar.addEventListener('click', () => {
+        if (!currentUser) return;
+        viewedUserProfile = null;
+        navItems.forEach(i => i.classList.remove('active'));
+        document.querySelector('.nav-item[data-view="profile"]').classList.add('active');
+        renderView('profile');
+    });
+
     renderHeaderState();
-    
+
+    if (token) startNotifPolling();
+
     // Auto load home feed
-    if(currentView === 'home') {
+    if (currentView === 'home') {
         headerTitle.textContent = 'ホーム';
         updatePostSection();
         refreshFeed();
