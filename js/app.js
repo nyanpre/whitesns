@@ -65,7 +65,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     initTheme();
-    // Watch for OS theme changes
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
         if(!localStorage.getItem('theme')) initTheme();
     });
@@ -101,26 +100,26 @@ document.addEventListener('DOMContentLoaded', () => {
         try { hostname = new URL(url).hostname; } catch(e){}
 
         return `
-            <a href="${url}" target="_blank" class="block mt-3 border border-borderBase dark:border-darkBorder rounded-2xl overflow-hidden hover:bg-black/5 dark:hover:bg-white/5 transition" onclick="event.stopPropagation()">
-                <div class="h-32 bg-gradient-to-br from-indigo-100 to-pink-100 dark:from-slate-800 dark:to-slate-700 flex flex-col items-center justify-center text-textSub dark:text-darkTextSub">
-                    <span class="material-symbols-rounded !text-4xl opacity-50 mb-1">link</span>
-                    <span class="text-xs font-mono opacity-80">${hostname}</span>
+            <a href="${url}" target="_blank" class="block mt-2 mx-1 border border-borderBase/50 dark:border-darkBorder/50 rounded-xl overflow-hidden hover:bg-black/5 dark:hover:bg-white/5 transition" onclick="event.stopPropagation()">
+                <div class="h-24 bg-gradient-to-br from-indigo-100 to-pink-100 dark:from-slate-800 dark:to-slate-700 flex flex-col items-center justify-center text-textSub dark:text-darkTextSub">
+                    <span class="material-symbols-rounded !text-2xl opacity-50 mb-0.5">link</span>
+                    <span class="text-[10px] font-mono opacity-80">${hostname}</span>
                 </div>
-                <div class="p-4 bg-white dark:bg-slate-900 border-t border-borderBase dark:border-darkBorder">
-                    <div class="font-bold truncate mb-1">Preview Card (Mock)</div>
-                    <div class="text-[13px] text-textSub dark:text-darkTextSub line-clamp-2">This is a mock OGP preview card. In the future, this will show the actual preview image and description of the link.</div>
+                <div class="p-2 bg-white/50 dark:bg-slate-900/50 border-t border-borderBase/50 dark:border-darkBorder/50">
+                    <div class="text-[13px] font-bold truncate mb-0.5">Preview Card</div>
+                    <div class="text-[11px] text-textSub dark:text-darkTextSub line-clamp-1">OGP mock info</div>
                 </div>
             </a>
         `;
     }
 
-    // --- Compose Overlay Hack ---
+    // --- Compose ---
     function updateHighlight() {
         const text = composeInput.value;
         const escaped = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         const highlighted = escaped.replace(/(#[^\s]+)/g, '<span class="text-primary font-medium">$1</span>')
                                    .replace(/(@[a-zA-Z0-9_.-]+)/g, '<span class="text-primary font-medium">$1</span>')
-                                   + "\u200B"; // 0-width space for trailing newline
+                                   + "\u200B"; 
         composeHighlight.innerHTML = highlighted;
     }
 
@@ -130,18 +129,15 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('compose-char-count').textContent = `${length} / 500`;
         submitComposeBtn.disabled = length === 0 || length > 500;
     });
-
     composeInput.addEventListener('scroll', () => {
         composeHighlight.scrollTop = composeInput.scrollTop;
         composeHighlight.scrollLeft = composeInput.scrollLeft;
     });
 
-    // --- Compose Modal ---
     function openComposeModal(replyTarget = null) {
         if(!currentUser) { document.getElementById('login-modal').classList.add('modal-open'); return; }
         replyTargetPost = replyTarget;
         document.getElementById('compose-avatar').innerHTML = `<img src="${currentUser.avatar}" alt="Avatar" class="w-full h-full object-cover">`;
-        
         if (replyTarget) {
             document.getElementById('reply-context').classList.remove('hidden');
             document.getElementById('reply-to-text').textContent = `Replying to: ${replyTarget.handle}`;
@@ -149,57 +145,37 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             document.getElementById('reply-context').classList.add('hidden');
         }
-        
         composeInput.dispatchEvent(new Event('input'));
         composeModal.classList.add('modal-open');
         composeInput.focus();
     }
-
-    document.getElementById('close-compose-btn').addEventListener('click', () => {
-        composeModal.classList.remove('modal-open');
-    });
-
+    document.getElementById('close-compose-btn').addEventListener('click', () => { composeModal.classList.remove('modal-open'); });
     document.getElementById('fab-post')?.addEventListener('click', () => openComposeModal());
 
-    // --- Drafts Modal ---
+    // --- Drafts ---
     draftListBtn.addEventListener('click', () => {
-        if (replyTargetPost) {
-            alert("返信画面では下書き保存できません。");
-            return;
-        }
+        if (replyTargetPost) { alert("返信画面では下書き保存できません。"); return; }
         const text = composeInput.value.trim();
         if (text) { 
-            if (drafts.length >= 30) {
-                alert("下書きがいっぱいです（最大30件）。古いものを削除するか投稿してください。");
-            } else {
-                drafts.unshift({ id: Date.now(), text: text, date: new Date().toLocaleString() });
-                composeInput.value = "";
-                updateHighlight();
-                saveState();
-            }
+            if (drafts.length >= 30) { alert("下書きがいっぱいです（最大30件）。"); } 
+            else { drafts.unshift({ id: Date.now(), text: text, date: new Date().toLocaleString() }); composeInput.value = ""; updateHighlight(); saveState(); }
         }
-        
         renderDraftsList();
         draftsModal.classList.add('modal-open');
     });
 
-    document.getElementById('close-drafts-btn').addEventListener('click', () => {
-        draftsModal.classList.remove('modal-open');
-    });
+    document.getElementById('close-drafts-btn').addEventListener('click', () => { draftsModal.classList.remove('modal-open'); });
 
     function renderDraftsList() {
         const list = document.getElementById('drafts-list');
-        if(drafts.length === 0) {
-            list.innerHTML = `<div class="p-10 text-center text-textSub font-bold opacity-50">No drafts</div>`;
-            return;
-        }
+        if(drafts.length === 0) { list.innerHTML = `<div class="p-8 text-center text-textSub font-bold opacity-50 text-[13px]">No drafts</div>`; return; }
         list.innerHTML = drafts.map(d => `
-            <div class="p-4 border-b border-borderBase dark:border-darkBorder hover:bg-black/5 dark:hover:bg-white/5 transition flex items-start gap-3 cursor-pointer draft-item" data-id="${d.id}">
+            <div class="px-4 py-3 border-b border-borderBase/50 dark:border-darkBorder/50 hover:bg-black/5 dark:hover:bg-white/5 transition flex items-start gap-2 cursor-pointer draft-item" data-id="${d.id}">
                 <div class="flex-1">
-                    <p class="text-xs text-textSub dark:text-darkTextSub mb-1 font-mono">${d.date}</p>
-                    <p class="text-[15px] font-medium line-clamp-2">${formatPostText(d.text)}</p>
+                    <p class="text-[10px] text-textSub dark:text-darkTextSub mb-0.5 font-mono">${d.date}</p>
+                    <p class="text-[13px] font-medium line-clamp-2">${formatPostText(d.text)}</p>
                 </div>
-                <button class="w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 dark:hover:bg-red-900/30 text-red-500 transition delete-draft" data-id="${d.id}"><span class="material-symbols-rounded !text-[20px]">delete</span></button>
+                <button class="w-7 h-7 flex items-center justify-center rounded-full hover:bg-red-50 dark:hover:bg-red-900/30 text-red-500 transition delete-draft" data-id="${d.id}"><span class="material-symbols-rounded !text-[18px]">delete</span></button>
             </div>
         `).join('');
 
@@ -217,7 +193,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         });
-
         document.querySelectorAll('.delete-draft').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -253,14 +228,13 @@ document.addEventListener('DOMContentLoaded', () => {
         MOCK_POSTS.unshift(newPost);
         MOCK_PROFILES[currentUser.handle] = currentUser; 
         saveState();
-        
         document.getElementById('close-compose-btn').click();
         composeInput.value = "";
         
         if(currentView === 'home' || currentView === 'profile') renderView(currentView);
     });
 
-    // --- Profile Edit Modal ---
+    // --- Profile Edit ---
     function openProfileEdit() {
         if(!currentUser) return;
         document.getElementById('edit-display-name').value = currentUser.displayName;
@@ -268,31 +242,22 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('edit-bio').value = currentUser.bio || "";
         profileEditModal.classList.add('modal-open');
     }
-
-    document.getElementById('close-profile-edit').addEventListener('click', () => {
-        profileEditModal.classList.remove('modal-open');
-    });
-
+    document.getElementById('close-profile-edit').addEventListener('click', () => profileEditModal.classList.remove('modal-open'));
     document.getElementById('profile-edit-form').addEventListener('submit', (e) => {
         e.preventDefault();
         currentUser.displayName = document.getElementById('edit-display-name').value;
         const ava = document.getElementById('edit-avatar-url').value;
         currentUser.avatar = ava || `https://ui-avatars.com/api/?name=${currentUser.displayName}&background=random`;
         currentUser.bio = document.getElementById('edit-bio').value;
-        
         MOCK_PROFILES[currentUser.handle] = currentUser;
         saveState();
-        
         document.getElementById('close-profile-edit').click();
         renderHeaderState();
         if(currentView === 'profile') renderView('profile');
     });
 
-    // --- Login (Mock for now) ---
-    document.getElementById('close-login-btn').addEventListener('click', () => {
-        loginModal.classList.remove('modal-open');
-    });
-    
+    // --- Login ---
+    document.getElementById('close-login-btn').addEventListener('click', () => loginModal.classList.remove('modal-open'));
     document.getElementById('mock-login-btn').addEventListener('click', () => {
         finishLogin({
             did: "did:mock:12345",
@@ -306,11 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function finishLogin(userObj) {
         const existing = MOCK_PROFILES[userObj.handle];
         if(existing) currentUser = existing;
-        else {
-            currentUser = userObj;
-            MOCK_PROFILES[userObj.handle] = currentUser;
-            saveState();
-        }
+        else { currentUser = userObj; MOCK_PROFILES[userObj.handle] = currentUser; saveState(); }
         localStorage.setItem('whiteSNS_user', JSON.stringify(currentUser));
         document.getElementById('close-login-btn').click();
         renderHeaderState();
@@ -328,24 +289,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Dynamic Rendering ---
+    // --- Rendering ---
     function updatePostSection() {
         if(currentUser) {
             postSection.innerHTML = `
-                <div class="flex gap-3 p-3 my-2 bg-white/50 dark:bg-slate-900/50 rounded-2xl border border-white dark:border-white/5 shadow-sm hover:shadow-md transition duration-300" onclick="document.getElementById('fab-post').click()">
-                    <div class="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden shadow-sm">
+                <div class="flex gap-2 p-2 px-3 items-center" onclick="document.getElementById('fab-post').click()">
+                    <div class="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-black/5 dark:border-white/5 shadow-sm">
                         <img src="${currentUser.avatar}" alt="Avatar" class="w-full h-full object-cover">
                     </div>
-                    <div class="flex-1 flex items-center">
-                        <div class="text-textSub dark:text-darkTextSub text-[16px] font-medium opacity-70">What's happening?</div>
-                    </div>
+                    <div class="text-textSub dark:text-darkTextSub text-[14px] ml-1 opacity-70">What's happening?</div>
                 </div>`;
             postSection.classList.remove('hidden');    
         } else {
             postSection.innerHTML = `
-                <div class="p-6 flex flex-col justify-center items-center text-center">
-                    <p class="font-bold mb-3 text-lg">Join the Conversation</p>
-                    <button class="bg-gradient-to-r from-primary to-secondary text-white font-bold py-2 px-8 rounded-full shadow-lg hover:scale-105 transition" onclick="document.getElementById('login-modal').classList.add('modal-open');">Log in</button>
+                <div class="py-4 text-center">
+                    <button class="bg-gradient-to-r from-primary to-secondary text-white font-bold py-1.5 px-6 rounded-full text-[13px] shadow-sm hover:opacity-90" onclick="document.getElementById('login-modal').classList.add('modal-open');">Log in</button>
                 </div>`;
             postSection.classList.remove('hidden');
         }
@@ -356,23 +314,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if(targetUser) {
             const isMe = targetUser.handle === currentUser?.handle;
             profileHeader.innerHTML = `
-                <div class="h-40 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 w-full relative">
-                    <div class="absolute -bottom-12 left-5 w-24 h-24 bg-white dark:bg-slate-900 rounded-full p-1.5 shadow-xl overflow-hidden">
-                        <div class="w-full h-full rounded-full overflow-hidden">
-                            <img src="${targetUser.avatar}" alt="Avatar" class="w-full h-full object-cover">
-                        </div>
+                <div class="h-28 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 relative">
+                    <div class="absolute -bottom-10 left-4 w-20 h-20 bg-white dark:bg-slate-900 rounded-full p-1 shadow-md">
+                        <img src="${targetUser.avatar}" alt="Avatar" class="w-full h-full object-cover rounded-full">
                     </div>
                     ${isMe ? `
-                    <button class="absolute -bottom-10 right-5 border border-borderBase dark:border-darkBorder bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-5 py-2 rounded-full font-bold hover:bg-black/5 dark:hover:bg-white/10 transition shadow-sm text-sm" onclick="document.getElementById('profile-edit-btn').click()">
-                        Edit Profile
-                    </button>
+                    <button class="absolute -bottom-8 right-3 border border-borderBase dark:border-darkBorder bg-white/80 dark:bg-slate-900/80 px-3 py-1.5 rounded-full font-bold hover:bg-black/5 text-[12px]" onclick="document.getElementById('profile-edit-btn').click()">Edit</button>
                     <button id="profile-edit-btn" class="hidden"></button>
                     ` : ''}
                 </div>
-                <div class="pt-16 px-6 pb-6 animate-fade-in">
-                    <h2 class="font-bold text-2xl">${targetUser.displayName}</h2>
-                    <p class="text-textSub dark:text-darkTextSub text-[15px] font-mono mt-0.5 opacity-80">${targetUser.handle}</p>
-                    <p class="mt-4 text-[16px] leading-relaxed whitespace-pre-wrap">${targetUser.bio || 'No bio yet.'}</p>
+                <div class="pt-12 px-4 pb-4">
+                    <h2 class="font-bold text-[18px]">${targetUser.displayName}</h2>
+                    <p class="text-textSub dark:text-darkTextSub text-[12px] font-mono mt-0.5 opacity-80">${targetUser.handle}</p>
+                    <p class="mt-2 text-[14px] leading-snug whitespace-pre-wrap">${targetUser.bio || 'No bio yet.'}</p>
                 </div>`;
             profileTabs.classList.remove('hidden');
             document.getElementById('profile-edit-btn')?.addEventListener('click', openProfileEdit);
@@ -383,10 +337,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderFeed(posts) {
         if(posts.length === 0) {
-            feed.innerHTML = `<div class="p-10 text-center text-textSub font-bold opacity-50">No posts yet</div>`;
+            feed.innerHTML = `<div class="p-8 text-center text-textSub text-[13px] font-bold opacity-50">No posts yet</div>`;
             return;
         }
 
+        // Change from margin-separated rounded cards to dense border-bottom rows
         feed.innerHTML = posts.map(post => {
             const profile = MOCK_PROFILES[post.handle] || { avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(post.user)}&background=random` };
             const isBookmarked = bookmarks.includes(post.id);
@@ -395,38 +350,38 @@ document.addEventListener('DOMContentLoaded', () => {
             if (post.parent_id) {
                 const parent = MOCK_POSTS.find(p => p.id === post.parent_id);
                 if (parent) {
-                    parentHtml = `<div class="text-[13px] text-secondary dark:text-pink-400 mb-2 ml-12 font-medium"><span class="material-symbols-rounded !text-[16px] align-text-bottom">reply</span> <span class="mention cursor-pointer hover:underline" data-handle="${parent.handle}">Replying to ${parent.handle}</span></div>`;
+                    parentHtml = `<div class="text-[11px] text-secondary dark:text-pink-400 mb-1 ml-10 font-medium"><span class="material-symbols-rounded !text-[13px] align-text-bottom">reply</span> <span class="mention cursor-pointer hover:underline" data-handle="${parent.handle}">Replying to ${parent.handle}</span></div>`;
                 }
             }
             
             return `
-            <article class="p-5 mb-4 glass-card hover:shadow-lg transition-all animate-fade-in cursor-pointer relative" data-post-id="${post.id}">
+            <article class="px-4 py-3 border-b border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer relative group/post" data-post-id="${post.id}">
                 ${parentHtml}
-                <div class="flex gap-4">
-                    <div class="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-full flex-shrink-0 overflow-hidden avatar-click cursor-pointer shadow-sm border border-black/5 dark:border-white/5" data-handle="${post.handle}">
+                <div class="flex gap-3">
+                    <div class="w-9 h-9 bg-gray-200 dark:bg-gray-700 rounded-full shrink-0 overflow-hidden avatar-click cursor-pointer border border-black/5 dark:border-white/5" data-handle="${post.handle}">
                         <img src="${profile.avatar}" alt="Avatar" class="w-full h-full object-cover pointer-events-none">
                     </div>
                     <div class="flex-1 min-w-0 pt-0.5">
-                        <div class="flex items-center gap-2 mb-1.5">
-                            <span class="font-bold text-[17px] truncate hover:underline avatar-click cursor-pointer" data-handle="${post.handle}">${post.user}</span>
-                            <span class="text-textSub dark:text-darkTextSub text-[14px] font-mono opacity-80 truncate">${post.handle}</span>
-                            <span class="text-textSub dark:text-darkTextSub text-[14px] opacity-50">·</span>
-                            <span class="text-textSub dark:text-darkTextSub text-[14px] opacity-80">${post.time}</span>
+                        <div class="flex items-center gap-1.5 mb-1">
+                            <span class="font-bold text-[14px] truncate hover:underline avatar-click cursor-pointer" data-handle="${post.handle}">${post.user}</span>
+                            <span class="text-textSub dark:text-darkTextSub text-[12px] font-mono opacity-80 truncate">${post.handle}</span>
+                            <span class="text-textSub dark:text-darkTextSub text-[12px] opacity-40">·</span>
+                            <span class="text-textSub dark:text-darkTextSub text-[12px] opacity-80">${post.time}</span>
                         </div>
-                        <p class="text-[16px] leading-relaxed whitespace-pre-wrap">${formatPostText(post.text)}</p>
+                        <p class="text-[14px] leading-snug whitespace-pre-wrap">${formatPostText(post.text)}</p>
                         ${checkOGP(post.text)}
                         
-                        <div class="flex justify-between items-center mt-4 text-textSub dark:text-darkTextSub max-w-md pr-6">
-                            <button class="flex items-center gap-1.5 hover:text-primary group transition action-btn" data-action="reply">
-                                <div class="w-9 h-9 flex items-center justify-center rounded-full group-hover:bg-primary/10 transition pointer-events-none"><span class="material-symbols-rounded !text-[20px]">chat_bubble</span></div>
-                                <span class="text-[15px] font-medium pointer-events-none mt-0.5">${post.replies > 0 ? post.replies : ''}</span>
+                        <div class="flex justify-between items-center mt-2.5 text-textSub dark:text-darkTextSub pr-4 opacity-80 group-hover/post:opacity-100 transition-opacity">
+                            <button class="flex items-center gap-1 hover:text-primary group transition action-btn" data-action="reply">
+                                <div class="w-7 h-7 flex items-center justify-center rounded-full group-hover:bg-primary/10 transition pointer-events-none"><span class="material-symbols-rounded !text-[18px]">chat_bubble</span></div>
+                                <span class="text-[12px] font-medium pointer-events-none mt-0.5">${post.replies > 0 ? post.replies : ''}</span>
                             </button>
-                            <button class="flex items-center gap-1.5 hover:text-secondary group transition action-btn" data-action="like">
-                                <div class="w-9 h-9 flex items-center justify-center rounded-full group-hover:bg-secondary/10 transition pointer-events-none"><span class="material-symbols-rounded !text-[20px]">favorite</span></div>
-                                <span class="text-[15px] font-medium pointer-events-none mt-0.5">${post.likes > 0 ? post.likes : ''}</span>
+                            <button class="flex items-center gap-1 hover:text-secondary group transition action-btn" data-action="like">
+                                <div class="w-7 h-7 flex items-center justify-center rounded-full group-hover:bg-secondary/10 transition pointer-events-none"><span class="material-symbols-rounded !text-[18px]">favorite</span></div>
+                                <span class="text-[12px] font-medium pointer-events-none mt-0.5">${post.likes > 0 ? post.likes : ''}</span>
                             </button>
-                            <button class="flex items-center gap-1.5 ${isBookmarked ? 'text-primary' : ''} hover:text-primary group transition action-btn" data-action="bookmark">
-                                <div class="w-9 h-9 flex items-center justify-center rounded-full group-hover:bg-primary/10 transition pointer-events-none"><span class="material-symbols-rounded !text-[20px] ${isBookmarked ? '!font-bold' : ''}">bookmark</span></div>
+                            <button class="flex items-center gap-1 ${isBookmarked ? 'text-primary' : ''} hover:text-primary group transition action-btn" data-action="bookmark">
+                                <div class="w-7 h-7 flex items-center justify-center rounded-full group-hover:bg-primary/10 transition pointer-events-none"><span class="material-symbols-rounded !text-[18px] ${isBookmarked ? '!font-bold' : ''}">bookmark</span></div>
                             </button>
                         </div>
                     </div>
@@ -436,8 +391,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function refreshFeed() {
-        feed.innerHTML = '<div class="flex justify-center p-10"><div class="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div></div>';
-        await new Promise(r => setTimeout(r, 500));
+        feed.innerHTML = '<div class="flex justify-center p-8"><div class="w-8 h-8 border-[3px] border-primary border-t-transparent rounded-full animate-spin"></div></div>';
+        await new Promise(r => setTimeout(r, 400));
         renderFeed(MOCK_POSTS);
         window.scrollTo({top: 0, behavior: 'smooth'});
     }
@@ -446,14 +401,10 @@ document.addEventListener('DOMContentLoaded', () => {
     navItems.forEach(item => {
         item.addEventListener('click', () => {
             const view = item.getAttribute('data-view');
-            // If home is clicked again while on home, refresh feed
-            if (view === 'home' && currentView === 'home') {
-                refreshFeed();
-                return;
-            }
+            if (view === 'home' && currentView === 'home') { refreshFeed(); return; }
             navItems.forEach(i => i.classList.remove('active'));
             item.classList.add('active');
-            viewedUserProfile = null; // back to my profile
+            viewedUserProfile = null;
             renderView(view);
         });
     });
@@ -480,26 +431,24 @@ document.addEventListener('DOMContentLoaded', () => {
             headerTitle.textContent = 'Notifications';
             if(currentUser) {
                 feed.innerHTML = `
-                    <div class="p-5 mb-4 glass-card bg-primary/5 dark:bg-primary/10">
-                        <div class="flex gap-4">
-                           <div class="w-10 flex justify-center"><span class="material-symbols-rounded text-primary !text-3xl">chat_bubble</span></div>
-                           <div class="flex-1">
-                               <img src="https://ui-avatars.com/api/?name=Guest&background=random" class="w-10 h-10 rounded-full mb-3 border border-white dark:border-darkBorder">
-                               <p class="text-[16px]"><span class="font-bold">Guest User</span>さんがあなたの投稿に返信しました</p>
-                           </div>
+                    <div class="px-4 py-3 border-b border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 transition flex gap-3">
+                        <div class="w-8 flex justify-center mt-1"><span class="material-symbols-rounded text-primary !text-2xl">chat_bubble</span></div>
+                        <div class="flex-1">
+                            <img src="https://ui-avatars.com/api/?name=Guest&background=random" class="w-8 h-8 rounded-full mb-1.5 border border-white dark:border-darkBorder">
+                            <p class="text-[13px]"><span class="font-bold">Guest User</span>さんがあなたの投稿に返信しました</p>
                         </div>
                     </div>`;
-            } else { feed.innerHTML = '<div class="p-10 text-center font-bold opacity-50">Log in to see notifications</div>'; }
+            } else { feed.innerHTML = '<div class="p-8 text-center text-[13px] font-bold opacity-50">Log in to see notifications</div>'; }
         } else if (view === 'search') {
             headerTitle.textContent = 'Search';
             feed.innerHTML = `
-                <div class="p-2 mb-6">
+                <div class="p-2 mb-2">
                     <div class="relative">
-                        <span class="material-symbols-rounded absolute left-4 top-1/2 -translate-y-1/2 text-textSub opacity-60">search</span>
-                        <input type="text" id="srch" placeholder="Search keywords..." class="w-full pl-12 pr-4 py-4 rounded-full glass-card outline-none focus:ring-2 focus:ring-primary transition-shadow font-medium text-[16px]">
+                        <span class="material-symbols-rounded absolute left-3 top-1/2 -translate-y-1/2 text-textSub opacity-60 !text-[20px]">search</span>
+                        <input type="text" id="srch" placeholder="Keywords..." class="w-full pl-9 pr-3 py-2 rounded-xl bg-white/50 dark:bg-white/5 border border-black/5 outline-none focus:ring-1 focus:ring-primary text-[14px]">
                     </div>
                 </div>
-                <div id="srch-res"><h3 class="font-bold text-lg px-4 mb-4">Trending</h3><div class="px-4"><span class="hashtag text-primary font-bold cursor-pointer hover:underline text-[17px]">#初めての投稿</span></div></div>
+                <div id="srch-res"><h3 class="font-bold text-[14px] px-3 mb-2 opacity-80">Trending</h3><div class="px-3"><span class="hashtag text-primary font-bold cursor-pointer hover:underline text-[15px]">#初めての投稿</span></div></div>
             `;
             document.getElementById('srch').addEventListener('keydown', (e) => {
                 if(e.key === 'Enter') {
@@ -509,14 +458,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     renderFeed(r);
                     const resHTML = feed.innerHTML;
                     feed.innerHTML = currentTop;
-                    document.getElementById('srch-res').innerHTML = `<h3 class="font-bold text-lg px-4 mb-4">Results for "${q}"</h3>${resHTML}`;
+                    document.getElementById('srch-res').innerHTML = `<h3 class="font-bold text-[14px] px-3 mb-2 opacity-80">Results : ${q}</h3>${resHTML}`;
                 }
             });
         }
     }
 
     feed.addEventListener('click', (e) => {
-        // Event delegation for Profile Routing
         const profEl = e.target.closest('.avatar-click, .mention');
         if(profEl) {
             e.stopPropagation();
@@ -529,7 +477,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Event delegation for Hashtag Search Routing
         if(e.target.classList.contains('hashtag')) {
             e.stopPropagation();
             const tag = e.target.textContent;
@@ -537,7 +484,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const searchBtn = document.querySelector('.nav-item[data-view="search"]');
             searchBtn.classList.add('active');
             renderView('search');
-            // Auto fill and trigger search
             setTimeout(() => {
                 const searchInput = document.getElementById('srch');
                 if(searchInput) {
@@ -579,10 +525,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!user) return;
         if(tabName === 'posts') { renderFeed(MOCK_POSTS.filter(p => p.handle === user.handle)); }
         else if(tabName === 'bookmarks' && user.handle === currentUser?.handle) { renderFeed(MOCK_POSTS.filter(p => bookmarks.includes(p.id))); }
-        else { feed.innerHTML = `<div class="p-10 text-center font-bold opacity-50">Yet to come</div>`; }
+        else { feed.innerHTML = `<div class="p-8 text-center text-[13px] font-bold opacity-50">Empty</div>`; }
     }
 
-    // Init
     renderHeaderState();
     renderView('home');
 });
