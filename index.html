@@ -60,7 +60,7 @@
             <button class="tab-item" data-tab="replies">返信</button>
             <button class="tab-item" data-tab="media">メディア</button>
             <button class="tab-item" data-tab="likes">いいね</button>
-            <button class="tab-item" data-tab="bookmarks">保存</button>
+            <button class="tab-item" data-tab="bookmarks">ブックマーク</button>
         </nav>
 
         <!-- Feed / List Output -->
@@ -84,6 +84,40 @@
             <span class="material-symbols-rounded !text-[28px]">person</span>
         </button>
     </nav>
+
+    <!-- Floating Action Button (FAB) -->
+    <button id="fab-post" class="hidden fixed bottom-20 right-4 w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-600 transition-transform active:scale-95 z-30">
+        <span class="material-symbols-rounded !text-[28px]">add</span>
+    </button>
+
+    <!-- Post Compose Modal -->
+    <div id="compose-modal" class="fixed inset-0 bg-white md:bg-black/40 md:backdrop-blur-sm z-50 flex flex-col md:items-center md:pt-16 opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-white w-full h-full md:h-auto md:max-w-[600px] md:rounded-2xl shadow-xl flex flex-col md:transform md:-translate-y-4 transition-transform duration-200" id="compose-modal-content">
+            <div class="flex justify-between items-center px-4 py-2 border-b border-borderBase md:border-none md:pt-4">
+                <button id="close-compose-btn" class="p-2 rounded-full hover:bg-gray-100 transition flex items-center justify-center"><span class="material-symbols-rounded">close</span></button>
+                <div class="flex gap-2">
+                    <button id="draft-compose-btn" class="text-primary font-bold px-4 py-1.5 rounded-full hover:bg-blue-50 transition text-[14px]">下書き保存</button>
+                    <button id="submit-compose-btn" class="bg-primary text-white font-bold px-5 py-1.5 rounded-full hover:bg-blue-600 disabled:opacity-50 transition shadow-sm text-[15px]" disabled>投稿する</button>
+                </div>
+            </div>
+            
+            <div class="flex gap-3 p-4 flex-1 md:flex-none md:min-h-[160px] overflow-y-auto">
+                <div class="w-10 h-10 bg-gray-200 rounded-full flex-shrink-0 overflow-hidden" id="compose-avatar">
+                </div>
+                <div class="flex-1 flex flex-col">
+                    <div id="reply-context" class="hidden text-textSub text-sm flex gap-1 items-center mb-1"><span class="material-symbols-rounded !text-[16px]">reply</span> <span id="reply-to-text"></span></div>
+                    <textarea id="compose-input" maxlength="500" placeholder="いまどうしてる？" class="w-full flex-1 md:min-h-[100px] resize-none outline-none text-[20px] placeholder:text-textSub bg-transparent mt-1"></textarea>
+                </div>
+            </div>
+            
+            <div class="px-4 pb-4 flex justify-between items-center border-t border-borderBase/50 pt-3">
+                <div class="flex gap-1 text-primary">
+                    <button type="button" class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-blue-50 transition"><span class="material-symbols-rounded pb-0.5">image</span></button>
+                </div>
+                <span id="compose-char-count" class="text-sm text-textSub font-mono font-medium opacity-80">0 / 500</span>
+            </div>
+        </div>
+    </div>
 
     <!-- Login Modal -->
     <div id="login-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
