@@ -7,7 +7,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
     <!-- Icons -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
     <script src="https://cdn.tailwindcss.com"></script>
@@ -17,181 +17,216 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
+                        sans: ['Outfit', 'Noto Sans JP', 'sans-serif'],
                     },
                     colors: {
-                        primary: '#1d9bf0',
-                        bgBase: '#ffffff',
-                        borderBase: '#eff3f4',
-                        textMain: '#0f1419',
-                        textSub: '#536471',
-                        darkBg: '#000000',
-                        darkBorder: '#2f3336',
-                        darkTextMain: '#e7e9ea',
-                        darkTextSub: '#71767b'
+                        primary: '#6366f1', // Indigo instead of default blue for richer look
+                        secondary: '#ec4899', // Pink
+                        bgBase: '#f8fafc',
+                        borderBase: '#e2e8f0',
+                        textMain: '#0f172a',
+                        textSub: '#64748b',
+                        darkBg: '#020617',
+                        darkBorder: '#1e293b',
+                        darkTextMain: '#f8fafc',
+                        darkTextSub: '#94a3b8'
                     }
                 }
             }
         }
     </script>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Extra rich UI styles */
+        body {
+            background: linear-gradient(135deg, #f0f4ff 0%, #ffffff 50%, #fdf2f8 100%);
+            background-attachment: fixed;
+        }
+        .dark body {
+            background: linear-gradient(135deg, #09090b 0%, #020617 50%, #170f1a 100%);
+            background-attachment: fixed;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.03);
+            border-radius: 24px;
+        }
+        .dark .glass-card {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .glass-header {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .dark .glass-header {
+            background: rgba(2, 6, 23, 0.8);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+    </style>
 </head>
-<body class="bg-bgBase text-textMain dark:bg-darkBg dark:text-darkTextMain pb-16 font-sans antialiased text-[15px] transition-colors duration-200">
+<body class="text-textMain dark:text-darkTextMain pb-20 font-sans antialiased transition-colors duration-300 min-h-screen">
 
     <!-- Header -->
-    <header class="sticky top-0 bg-white/80 dark:bg-darkBg/80 backdrop-blur-md border-b border-borderBase dark:border-darkBorder z-30 px-4 h-14 flex items-center shadow-sm transition-all justify-between">
+    <header class="sticky top-0 glass-header z-30 px-5 h-16 flex items-center justify-between transition-all" id="main-header">
         <div class="flex items-center gap-3">
-            <div id="header-avatar" class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden cursor-pointer hidden"></div>
-            <h1 id="header-title" class="font-bold text-xl tracking-tight">ホーム</h1>
+            <div id="header-avatar" class="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden cursor-pointer hidden shadow-sm border border-white/50 dark:border-white/10"></div>
+            <h1 id="header-title" class="font-bold text-2xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">Home</h1>
         </div>
-        <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition flex items-center justify-center">
+        <button id="theme-toggle" class="w-10 h-10 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition flex items-center justify-center text-textMain dark:text-white">
             <span id="theme-icon" class="material-symbols-rounded">dark_mode</span>
         </button>
     </header>
 
     <!-- Content Area -->
-    <main id="main-content" class="w-full max-w-2xl mx-auto min-h-screen border-x border-borderBase dark:border-darkBorder relative">
+    <main id="main-content" class="w-full max-w-2xl mx-auto min-h-screen relative p-3">
         
         <!-- Post Input Section (Compact) -->
-        <section id="post-section" class="p-3 border-b border-borderBase dark:border-darkBorder bg-white/50 dark:bg-darkBg/50 backdrop-blur-sm sticky top-14 z-20"></section>
+        <section id="post-section" class="mb-5 glass-card sticky top-16 z-20 overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300"></section>
 
         <!-- Profile Header (Hidden by default) -->
-        <section id="profile-header" class="hidden"></section>
+        <section id="profile-header" class="hidden mb-6 glass-card overflow-hidden"></section>
 
         <!-- Profile Tabs -->
-        <nav id="profile-tabs" class="hidden flex border-b border-borderBase dark:border-darkBorder sticky top-14 bg-white/90 dark:bg-darkBg/90 backdrop-blur-md z-20 transition-all">
-            <button class="tab-item active" data-tab="posts">投稿</button>
-            <button class="tab-item" data-tab="replies">返信</button>
-            <button class="tab-item" data-tab="media">メディア</button>
-            <button class="tab-item" data-tab="likes">いいね</button>
-            <button class="tab-item" data-tab="bookmarks">ブックマーク</button>
+        <nav id="profile-tabs" class="hidden flex glass-card mb-6 z-20 transition-all overflow-hidden">
+            <button class="tab-item active flex-1" data-tab="posts">Posts</button>
+            <button class="tab-item flex-1" data-tab="replies">Replies</button>
+            <button class="tab-item flex-1" data-tab="likes">Likes</button>
+            <button class="tab-item flex-1" data-tab="bookmarks">Saved</button>
         </nav>
 
         <!-- Feed / List Output -->
-        <div id="feed" class="pb-24"></div>
+        <div id="feed" class="pb-safe space-y-4"></div>
     </main>
 
     <!-- Bottom Navigation -->
-    <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-darkBg/90 backdrop-blur-md border-t border-borderBase dark:border-darkBorder flex justify-around p-2 z-40 pb-safe shadow-[0_-4px_10px_rgba(0,0,0,0.02)] dark:shadow-none">
-        <button class="nav-item active flex flex-col items-center justify-center p-2 rounded-xl transition" data-view="home">
-            <span class="material-symbols-rounded !text-[28px]">home</span>
+    <nav id="bottom-nav" class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[90%] max-w-[400px] glass-card flex justify-around p-2 z-40 rounded-full">
+        <button class="nav-item active flex flex-col items-center justify-center p-2 rounded-full transition" data-view="home">
+            <span class="material-symbols-rounded !text-[26px]">home</span>
         </button>
-        <button class="nav-item flex flex-col items-center justify-center p-2 rounded-xl transition" data-view="search">
-            <span class="material-symbols-rounded !text-[28px]">search</span>
+        <button class="nav-item flex flex-col items-center justify-center p-2 rounded-full transition" data-view="search">
+            <span class="material-symbols-rounded !text-[26px]">search</span>
         </button>
-        <button class="nav-item flex flex-col items-center justify-center p-2 rounded-xl transition" data-view="notifications">
-            <span class="material-symbols-rounded !text-[28px]">notifications</span>
+        <button class="nav-item flex flex-col items-center justify-center p-2 rounded-full transition" data-view="notifications">
+            <span class="material-symbols-rounded !text-[26px]">notifications</span>
         </button>
-        <button class="nav-item flex flex-col items-center justify-center p-2 rounded-xl transition" data-view="profile">
-            <span class="material-symbols-rounded !text-[28px]">person</span>
+        <button class="nav-item flex flex-col items-center justify-center p-2 rounded-full transition" data-view="profile">
+            <span class="material-symbols-rounded !text-[26px]">person</span>
         </button>
     </nav>
 
     <!-- Floating Action Button (FAB) -->
-    <button id="fab-post" class="hidden fixed bottom-20 right-4 w-14 h-14 bg-primary text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-600 transition-transform active:scale-95 z-30">
-        <span class="material-symbols-rounded !text-[28px]">add</span>
+    <button id="fab-post" class="hidden fixed bottom-24 right-5 md:right-[calc(50%-320px)] w-14 h-14 bg-gradient-to-r from-primary to-secondary text-white rounded-full shadow-[0_8px_20px_rgba(236,72,153,0.3)] flex items-center justify-center hover:scale-105 transition-transform active:scale-95 z-30">
+        <span class="material-symbols-rounded !text-[30px]">add</span>
     </button>
 
     <!-- Post Compose Modal -->
-    <div id="compose-modal" class="fixed inset-0 bg-white dark:bg-darkBg md:bg-black/40 md:dark:bg-black/60 md:backdrop-blur-sm z-50 flex flex-col md:items-center md:pt-16 opacity-0 pointer-events-none transition-opacity duration-200">
-        <div class="bg-white dark:bg-darkBg w-full h-full md:h-auto md:max-w-[600px] md:rounded-2xl shadow-xl border dark:border-darkBorder flex flex-col md:transform md:-translate-y-4 transition-transform duration-200" id="compose-modal-content">
-            <div class="flex justify-between items-center px-4 py-2 border-b border-borderBase dark:border-darkBorder md:border-transparent md:pt-4">
-                <button id="close-compose-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition flex items-center justify-center"><span class="material-symbols-rounded">close</span></button>
-                <div class="flex gap-2">
-                    <button id="draft-list-btn" class="text-primary font-bold px-4 py-1.5 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/30 transition text-[14px]">下書き</button>
-                    <button id="submit-compose-btn" class="bg-primary text-white font-bold px-5 py-1.5 rounded-full hover:bg-blue-600 disabled:opacity-50 transition shadow-sm text-[15px]" disabled>投稿</button>
+    <div id="compose-modal" class="fixed inset-0 bg-white/60 dark:bg-darkBg/60 backdrop-blur-md z-50 flex flex-col md:items-center md:pt-16 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="glass-card bg-white/90 dark:bg-slate-900/90 w-full h-full md:h-auto md:max-w-[600px] flex flex-col md:transform md:-translate-y-4 transition-transform duration-300 !rounded-none md:!rounded-3xl" id="compose-modal-content">
+            <div class="flex justify-between items-center px-4 py-3 border-b border-borderBase dark:border-darkBorder md:border-transparent md:pt-5">
+                <button id="close-compose-btn" class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition flex items-center justify-center"><span class="material-symbols-rounded">close</span></button>
+                <div class="flex gap-3">
+                    <button id="draft-list-btn" class="text-primary font-bold px-4 py-2 rounded-full hover:bg-primary/10 transition text-[15px]">Drafts</button>
+                    <button id="submit-compose-btn" class="bg-gradient-to-r from-primary to-secondary text-white font-bold px-6 py-2 rounded-full hover:shadow-lg disabled:opacity-50 transition-all text-[15px]" disabled>Post</button>
                 </div>
             </div>
             
-            <div class="flex gap-3 p-4 flex-1 md:flex-none md:min-h-[160px] overflow-y-auto">
-                <div class="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex-shrink-0 overflow-hidden" id="compose-avatar"></div>
-                <div class="flex-1 flex flex-col">
-                    <div id="reply-context" class="hidden text-textSub dark:text-darkTextSub text-sm flex gap-1 items-center mb-1">
+            <div class="flex gap-4 p-5 flex-1 md:flex-none md:min-h-[220px] overflow-y-auto">
+                <div class="w-12 h-12 rounded-full shadow-sm flex-shrink-0 overflow-hidden border border-white/50 dark:border-white/10" id="compose-avatar"></div>
+                <div class="flex-1 flex flex-col pt-1">
+                    <div id="reply-context" class="hidden text-secondary dark:text-pink-400 text-sm font-medium flex gap-1 items-center mb-2">
                         <span class="material-symbols-rounded !text-[16px]">reply</span> <span id="reply-to-text"></span>
                     </div>
                     <!-- Overlay Textarea setup for Syntax Highlighting -->
-                    <div class="relative w-full flex-1 md:min-h-[100px] mt-1 text-[20px] font-sans">
+                    <div class="relative w-full flex-1 md:min-h-[140px] text-[20px] font-sans leading-relaxed">
                         <div id="compose-highlight" class="absolute inset-0 whitespace-pre-wrap break-words pointer-events-none text-transparent m-0 p-0 overflow-hidden"></div>
-                        <textarea id="compose-input" maxlength="500" placeholder="いまどうしてる？" class="absolute inset-0 w-full h-full resize-none outline-none dark:placeholder:text-darkTextSub text-textMain dark:text-darkTextMain z-10 m-0 p-0 border-none bg-transparent overflow-y-auto"></textarea>
+                        <textarea id="compose-input" maxlength="500" placeholder="What's happening?" class="absolute inset-0 w-full h-full resize-none outline-none dark:placeholder:text-darkTextSub text-textMain dark:text-darkTextMain z-10 m-0 p-0 border-none bg-transparent overflow-y-auto"></textarea>
                     </div>
                 </div>
             </div>
             
-            <div class="px-4 pb-4 flex justify-between items-center border-t border-borderBase/50 dark:border-darkBorder/50 pt-3">
-                <div class="flex gap-1 text-primary">
-                    <button type="button" class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/30 transition"><span class="material-symbols-rounded pb-0.5">image</span></button>
+            <div class="px-5 pb-5 flex justify-between items-center pt-2">
+                <div class="flex gap-2 text-primary">
+                    <button type="button" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-primary/10 transition"><span class="material-symbols-rounded">image</span></button>
+                    <button type="button" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-primary/10 transition"><span class="material-symbols-rounded">sentiment_satisfied</span></button>
                 </div>
-                <span id="compose-char-count" class="text-sm text-textSub dark:text-darkTextSub font-mono font-medium opacity-80">0 / 500</span>
+                <span id="compose-char-count" class="text-sm font-mono font-bold opacity-50 bg-black/5 dark:bg-white/10 px-3 py-1 rounded-full text-textMain dark:text-white">0 / 500</span>
             </div>
         </div>
     </div>
 
     <!-- Drafts List Modal Sub-view -->
-    <div id="drafts-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex flex-col items-center pt-10 md:pt-20 opacity-0 pointer-events-none transition-opacity duration-200">
-        <div class="bg-white dark:bg-darkBg w-full max-w-[500px] h-[80vh] rounded-t-2xl md:rounded-b-2xl shadow-2xl border dark:border-darkBorder flex flex-col transform translate-y-full md:translate-y-0 transition-transform duration-300" id="drafts-modal-content">
-            <div class="flex justify-between items-center px-4 py-3 border-b border-borderBase dark:border-darkBorder">
-                <h3 class="font-bold text-lg">下書き (最大30件)</h3>
-                <button id="close-drafts-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition"><span class="material-symbols-rounded">close</span></button>
+    <div id="drafts-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex flex-col items-center justify-end md:justify-center md:pt-0 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="glass-card bg-white/90 dark:bg-slate-900/90 w-full md:max-w-[500px] h-[80vh] md:h-[60vh] !rounded-b-none md:!rounded-3xl flex flex-col transform translate-y-full md:translate-y-0 transition-transform duration-400" id="drafts-modal-content">
+            <div class="flex justify-between items-center px-6 py-4 border-b border-borderBase dark:border-darkBorder">
+                <h3 class="font-bold text-lg">下書き <span class="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full ml-1">MAX 30</span></h3>
+                <button id="close-drafts-btn" class="w-8 h-8 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition flex items-center justify-center"><span class="material-symbols-rounded">close</span></button>
             </div>
             <div id="drafts-list" class="flex-1 overflow-y-auto p-2"></div>
         </div>
     </div>
 
     <!-- Edit Profile Modal -->
-    <div id="profile-edit-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-200">
-        <div class="bg-white dark:bg-darkBg w-full max-w-sm rounded-2xl shadow-xl p-6 m-4 transform scale-95 transition-transform duration-200" id="profile-edit-content">
-            <h3 class="font-bold text-xl mb-4">プロフィール編集</h3>
-            <form id="profile-edit-form" class="space-y-4">
+    <div id="profile-edit-modal" class="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="glass-card bg-white/90 dark:bg-slate-900/90 w-full max-w-sm p-8 m-4 transform scale-95 transition-transform duration-300" id="profile-edit-content">
+            <h3 class="font-bold text-2xl mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">Edit Profile</h3>
+            <form id="profile-edit-form" class="space-y-5">
                 <div>
-                    <label class="block text-sm font-medium mb-1">表示名</label>
-                    <input type="text" id="edit-display-name" class="w-full border border-gray-300 dark:border-darkBorder rounded-lg p-2 outline-none dark:bg-gray-800 focus:ring-2 focus:ring-primary">
+                    <label class="block text-sm font-bold mb-2 opacity-80">Display Name</label>
+                    <input type="text" id="edit-display-name" class="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl p-3 outline-none focus:ring-2 focus:ring-primary transition-shadow font-medium">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium mb-1">アイコン画像のURL</label>
-                    <input type="url" id="edit-avatar-url" placeholder="https://..." class="w-full border border-gray-300 dark:border-darkBorder rounded-lg p-2 outline-none dark:bg-gray-800 focus:ring-2 focus:ring-primary">
+                    <label class="block text-sm font-bold mb-2 opacity-80">Avatar URL</label>
+                    <input type="url" id="edit-avatar-url" placeholder="https://..." class="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl p-3 outline-none focus:ring-2 focus:ring-primary transition-shadow font-medium">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium mb-1">自己紹介</label>
-                    <textarea id="edit-bio" class="w-full border border-gray-300 dark:border-darkBorder rounded-lg p-2 h-20 outline-none dark:bg-gray-800 focus:ring-2 focus:ring-primary resize-none"></textarea>
+                    <label class="block text-sm font-bold mb-2 opacity-80">Bio</label>
+                    <textarea id="edit-bio" class="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl p-3 h-24 outline-none focus:ring-2 focus:ring-primary transition-shadow resize-none font-medium"></textarea>
                 </div>
-                <div class="flex gap-3 pt-2">
-                    <button type="button" id="close-profile-edit" class="flex-1 bg-gray-200 dark:bg-gray-700 text-textMain dark:text-darkTextMain py-2 rounded-full font-bold">キャンセル</button>
-                    <button type="submit" class="flex-1 bg-primary text-white py-2 rounded-full font-bold">保存</button>
+                <div class="flex gap-4 pt-4">
+                    <button type="button" id="close-profile-edit" class="flex-1 bg-black/5 dark:bg-white/10 py-3 rounded-full font-bold hover:opacity-80 transition">Cancel</button>
+                    <button type="submit" class="flex-1 bg-gradient-to-r from-primary to-secondary text-white py-3 rounded-full font-bold shadow-lg hover:opacity-90 transition">Save</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Login Modal -->
-    <div id="login-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
-        <div class="bg-white dark:bg-darkBg w-full max-w-sm rounded-2xl shadow-xl p-6 transform scale-95 transition-transform duration-300 border dark:border-darkBorder" id="login-modal-content">
-            <div class="flex justify-between items-center mb-5">
-                <h3 class="font-bold text-xl">Blueskyでログイン</h3>
-                <button id="close-login-btn" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+    <div id="login-modal" class="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="glass-card bg-white/90 dark:bg-slate-900/90 w-full max-w-sm p-8 transform scale-95 transition-transform duration-300" id="login-modal-content">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">Login</h3>
+                <button id="close-login-btn" class="w-8 h-8 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition flex items-center justify-center">
                     <span class="material-symbols-rounded">close</span>
                 </button>
             </div>
             
-            <form id="login-form" class="space-y-4">
+            <form id="login-form" class="space-y-5">
                 <div>
-                    <label class="block text-sm font-medium mb-1">ハンドル名</label>
-                    <input type="text" id="bsky-handle" placeholder="your.bsky.social" class="w-full border border-gray-300 dark:border-darkBorder dark:bg-gray-800 rounded-lg p-3 outline-none focus:ring-2 focus:ring-primary transition-all">
+                    <label class="block text-sm font-bold mb-2 opacity-80">Handle</label>
+                    <input type="text" id="bsky-handle" placeholder="your.bsky.social" class="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl p-3 outline-none focus:ring-2 focus:ring-primary transition-shadow">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium mb-1">アプリパスワード</label>
-                    <input type="password" id="bsky-app-password" placeholder="xxxx-xxxx-xxxx-xxxx" class="w-full border border-gray-300 dark:border-darkBorder dark:bg-gray-800 rounded-lg p-3 outline-none focus:ring-2 focus:ring-primary transition-all">
+                    <label class="block text-sm font-bold mb-2 opacity-80">App Password</label>
+                    <input type="password" id="bsky-app-password" placeholder="xxxx-xxxx-xxxx-xxxx" class="w-full bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-xl p-3 outline-none focus:ring-2 focus:ring-primary transition-shadow">
                 </div>
                 
-                <div class="pt-2">
-                    <button type="submit" id="login-submit-btn" class="w-full bg-textMain dark:bg-darkTextMain text-bgBase dark:text-darkBg font-bold py-3 rounded-full hover:opacity-80 transition shadow-md flex justify-center items-center">
-                        <span>ログイン</span>
+                <div class="pt-4">
+                    <button type="submit" id="login-submit-btn" class="w-full bg-textMain dark:bg-white text-white dark:text-black font-bold py-3.5 rounded-full hover:scale-105 transition shadow-lg flex justify-center items-center">
+                        <span>Continue</span>
                         <div id="login-spinner" class="ml-2 w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin hidden"></div>
                     </button>
-                    <button type="button" id="mock-login-btn" class="w-full bg-blue-50 dark:bg-blue-900/30 text-primary font-bold py-3 rounded-full hover:bg-blue-100 transition mt-2">
-                        （テスト）モックログイン
+                    <button type="button" id="mock-login-btn" class="w-full bg-primary/10 text-primary font-bold py-3.5 rounded-full hover:bg-primary/20 transition mt-3">
+                        Mock Login
                     </button>
                 </div>
-                <div id="login-error" class="hidden text-red-500 text-sm text-center font-medium"></div>
+                <div id="login-error" class="hidden text-red-500 text-sm text-center font-bold mt-2"></div>
             </form>
         </div>
     </div>
