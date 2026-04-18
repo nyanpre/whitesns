@@ -373,10 +373,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderHeaderState();
                 refreshFeed();
             } else {
+                console.error("Login failed:", data);
                 errorDiv.textContent = data.error || "ログインに失敗しました。";
                 errorDiv.classList.remove('hidden');
             }
         } catch(err) {
+            console.error("Connection error:", err);
             errorDiv.textContent = "サーバーに接続できません。";
             errorDiv.classList.remove('hidden');
         } finally {
