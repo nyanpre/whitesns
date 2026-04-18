@@ -312,6 +312,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Login ---
     document.getElementById('close-login-btn').addEventListener('click', () => loginModal.classList.remove('modal-open'));
     
+    // Auto-fill remembered credentials
+    const savedHandle = localStorage.getItem('whiteSNS_auth_handle');
+    const savedPass = localStorage.getItem('whiteSNS_auth_pass');
+    if (savedHandle) document.getElementById('bsky-handle').value = savedHandle;
+    if (savedPass) document.getElementById('bsky-app-password').value = savedPass;
+
     document.getElementById('login-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const handle = document.getElementById('bsky-handle').value;
@@ -337,6 +343,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (data.success) {
                 token = data.token;
+                
+                // Remember credentials for next time
+                localStorage.setItem('whiteSNS_auth_handle', handle);
+                localStorage.setItem('whiteSNS_auth_pass', password);
                 
                 // Get fresh profile from DB created by login
                 const profRes = await fetch(`${API_BASE}/api/profile/${data.handle}`);
