@@ -54,7 +54,10 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const handle = bskyHandle.value.trim();
         const password = bskyPassword.value.trim();
-        if(!handle || !password) return;
+        if(!handle || !password) {
+            showLoginError("ハンドル名とパスワードを入力してください。");
+            return;
+        }
 
         loginError.classList.add('hidden');
         loginSpinner.classList.remove('hidden');
@@ -168,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p class="text-textSub text-sm mb-4">アカウントを持っていると、投稿やいいねができます。</p>
                     <button class="bg-black text-white px-6 py-2 rounded-full font-bold hover:bg-gray-800 transition trigger-login">ログインする</button>
                 </div>`;
-            document.querySelector('.trigger-login')?.addEventListener('click', openLoginModal);
+            document.querySelectorAll('.trigger-login').forEach(btn => btn.addEventListener('click', openLoginModal));
         }
     }
 
@@ -206,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     </button>
                 </div>`;
             profileTabs.classList.add('hidden');
-            document.querySelector('.trigger-login')?.addEventListener('click', openLoginModal);
+            document.querySelectorAll('.trigger-login').forEach(btn => btn.addEventListener('click', openLoginModal));
             feed.innerHTML = '';
         }
     }
@@ -311,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p class="text-textSub text-sm mb-6">通知を確認するにはログインしてください。</p>
                         <button class="bg-primary text-white font-bold py-2 px-8 rounded-full hover:bg-blue-600 transition trigger-login">ログイン</button>
                     </div>`;
-                    document.querySelector('.trigger-login')?.addEventListener('click', openLoginModal);
+                    document.querySelectorAll('.trigger-login').forEach(btn => btn.addEventListener('click', openLoginModal));
             }
         } 
         else if (view === 'profile') {
