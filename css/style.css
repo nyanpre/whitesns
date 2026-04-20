@@ -136,18 +136,68 @@ input, textarea {
 
 /* Overlay Text Syntax Highlighting Hack */
 #compose-input {
-    color: transparent !important; /* Text is invisible */
-    caret-color: #0f1419; /* Cursor is visible */
+    color: transparent !important;
+    caret-color: #0f1419;
+    padding: 0;
+    line-height: inherit;
+    font-size: inherit;
+    font-family: inherit;
 }
 .dark #compose-input {
     caret-color: #e7e9ea;
 }
 #compose-highlight {
-    color: #0f1419; /* Text drawn behind is visible */
+    color: #0f1419;
+    padding: 0;
+    line-height: inherit;
+    font-size: inherit;
+    font-family: inherit;
 }
 .dark #compose-highlight {
     color: #e7e9ea;
 }
+
+/* Liked Heart */
+.is-liked .material-symbols-rounded {
+    font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    color: #ec4899;
+}
+
+/* Repost styles */
+.repost-badge {
+    color: #10b981;
+}
+.repost-active .material-symbols-rounded {
+    color: #10b981;
+}
+
+/* Modal for user list */
+.user-list-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    transition: background 0.2s;
+    cursor: pointer;
+}
+.dark .user-list-item { border-color: rgba(255,255,255,0.05); }
+.user-list-item:hover { background: rgba(0,0,0,0.05); }
+.dark .user-list-item:hover { background: rgba(255,255,255,0.05); }
+
+/* Account Switcher UI */
+.account-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    transition: background 0.2s;
+    cursor: pointer;
+}
+.account-item:hover { background: rgba(0,0,0,0.05); }
+.dark .account-item:hover { background: rgba(255,255,255,0.05); }
+.account-item.active { background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.2); }
 
 /* Mock OGP Preview Card */
 .ogp-card {
