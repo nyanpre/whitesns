@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const API_BASE = "https://nyanpre-whitesns-api.hf.space";
 
     // --- State Management ---
+    let accounts = JSON.parse(localStorage.getItem('whiteSNS_accounts')) || [];
     let currentUser = JSON.parse(localStorage.getItem('whiteSNS_user')) || null;
     let token = localStorage.getItem('whiteSNS_token') || null;
     let bookmarks = JSON.parse(localStorage.getItem('whiteSNS_bookmarks')) || [];
@@ -13,6 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentView = 'home';
     let replyTargetPost = null;
     let notifPollInterval = null;
+    let viewHistory = []; // To support back button
+    let draftAutoSaveTimer = null;
 
     // --- DOM Elements ---
     const headerTitle = document.getElementById('header-title');
@@ -51,7 +54,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Helpers ---
     function saveLocalState() {
-        if (currentUser) localStorage.setItem('whiteSNS_user', JSON.stringify(currentUser));
+        if (currentUser) {
+            localStorage.setItem('whiteSNS_user', JSON.stringify(currentUser));
+            // Update in accounts array
+            const idx = accounts.findIndex(a => a.handle === currentUser.handle);
+            const accountData = { user: currentUser, token, bookmarks };
+            if (idx > -1) accounts[idx] = accountData;
+            else accounts.push(accountData);
+            localStorage.setItem('whiteSNS_accounts', JSON.stringify(accounts));
+        }
         localStorage.setItem('whiteSNS_drafts', JSON.stringify(drafts));
         localStorage.setItem('whiteSNS_bookmarks', JSON.stringify(bookmarks));
         if (token) localStorage.setItem('whiteSNS_token', token);
@@ -76,14 +87,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function logout() {
-        currentUser = null;
-        token = null;
-        localStorage.removeItem('whiteSNS_user');
-        localStorage.removeItem('whiteSNS_token');
-        if (notifPollInterval) { clearInterval(notifPollInterval); notifPollInterval = null; }
-        renderHeaderState();
-        renderView('home');
-        document.getElementById('login-modal').classList.add('modal-open');
+        if (currentUser) {
+            accounts = accounts.filter(a => a.handle !== currentUser.handle);
+            localStorage.setItem('whiteSNS_accounts', JSON.stringify(accounts));
+        }
+        if (accounts.length > 0) {
+            switchAccount(accounts[0].handle);
+        } else {
+            currentUser = null;
+            token = null;
+            bookmarks = [];
+            localStorage.removeItem('whiteSNS_user');
+            localStorage.removeItem('whiteSNS_token');
+            localStorage.removeItem('whiteSNS_bookmarks');
+            if (notifPollInterval) { clearInterval(notifPollInterval); notifPollInterval = null; }
+            renderHeaderState();
+            renderView('home');
+            document.getElementById('login-modal').classList.add('modal-open');
+        }
+    }
+
+    function switchAccount(handle) {
+        const acc = accounts.find(a => a.handle === handle);
+        if (!acc) return;
+        currentUser = acc.user;
+        token = acc.token;
+        bookmarks = acc.bookmarks || [];
+        saveLocalState();
+        location.reload(); // Hard reload to reset all states cleanly
     }
 
     function formatTimeAgo(dateString) {
@@ -205,6 +236,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const length = composeInput.value.length;
         document.getElementById('compose-char-count').textContent = `${length} / 500`;
         submitComposeBtn.disabled = length === 0 || length > 500;
+
+        // Auto-save draft
+        if (draftAutoSaveTimer) clearTimeout(draftAutoSaveTimer);
+        draftAutoSaveTimer = setTimeout(() => {
+            const text = composeInput.value.trim();
+            if (text && !replyTargetPost) {
+                // Keep only the most recent auto-draft or update existing one
+                const existingIdx = drafts.findIndex(d => d.isAuto);
+                const draftData = { id: Date.now(), text, date: new Date().toLocaleString(), isAuto: true };
+                if (existingIdx > -1) drafts[existingIdx] = draftData;
+                else drafts.unshift(draftData);
+                saveLocalState();
+            }
+        }, 2000);
     });
 
     composeInput.addEventListener('scroll', () => {
@@ -456,6 +501,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Account Switcher Trigger
+    headerAvatar.addEventListener('click', () => {
+        renderAccountSwitcher();
+        document.getElementById('account-modal').classList.add('modal-open');
+    });
+
+    function renderAccountSwitcher() {
+        const list = document.getElementById('account-list');
+        list.innerHTML = accounts.map(a => `
+            <div class="account-item ${a.handle === currentUser?.handle ? 'active' : ''}" onclick="window.SNS_switchAccount('${a.handle}')">
+                <img src="${a.user.avatar}" class="w-8 h-8 rounded-full">
+                <div class="flex-1 min-w-0">
+                    <div class="font-bold text-[13px] truncate">${a.user.displayName}</div>
+                    <div class="text-[11px] opacity-60 truncate">${a.handle}</div>
+                </div>
+                ${a.handle === currentUser?.handle ? '<span class="material-symbols-rounded text-primary !text-[18px]">check_circle</span>' : ''}
+            </div>
+        `).join('');
+    }
+    window.SNS_switchAccount = switchAccount;
+    document.getElementById('close-account-modal').addEventListener('click', () => document.getElementById('account-modal').classList.remove('modal-open'));
+    document.getElementById('add-account-btn').addEventListener('click', () => {
+        document.getElementById('account-modal').classList.remove('modal-open');
+        document.getElementById('login-modal').classList.add('modal-open');
+    });
+    document.getElementById('logout-all-btn').addEventListener('click', () => logout());
+
     // --- Rendering ---
     function updatePostSection() {
         if (currentUser) {
@@ -514,10 +586,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const statsEl = document.getElementById('follow-stats');
         if (statsEl && followInfo) {
             statsEl.innerHTML = `
-                <span><strong>${followInfo.followers}</strong> フォロワー</span>
+                <span class="cursor-pointer hover:underline" onclick="window.SNS_openUserList('followers')"><strong>${followInfo.followers}</strong> フォロワー</span>
                 <span class="opacity-40">·</span>
-                <span><strong>${followInfo.following}</strong> フォロー中</span>`;
+                <span class="cursor-pointer hover:underline" onclick="window.SNS_openUserList('following')"><strong>${followInfo.following}</strong> フォロー中</span>`;
         }
+        window.SNS_openUserList = (type) => openUserList(type, targetUser.handle);
 
         const followBtn = document.getElementById('follow-btn');
         if (followBtn && followInfo) {
@@ -573,6 +646,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             return `
             <article class="px-4 py-3 border-b border-black/5 dark:border-white/5 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer relative group/post" data-post-id="${post.id}">
+                ${post.isPinned ? '<div class="text-[11px] text-textSub opacity-60 mb-1 ml-10 flex items-center gap-1"><span class="material-symbols-rounded !text-[14px]">push_pin</span> 固定された投稿</div>' : ''}
                 ${parentHtml}
                 <div class="flex gap-3">
                     <div class="w-9 h-9 bg-gray-200 dark:bg-gray-700 rounded-full shrink-0 overflow-hidden avatar-click cursor-pointer border border-black/5 dark:border-white/5" data-handle="${post.handle}">
@@ -593,13 +667,21 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <div class="w-7 h-7 flex items-center justify-center rounded-full group-hover:bg-primary/10 transition pointer-events-none"><span class="material-symbols-rounded !text-[18px]">chat_bubble</span></div>
                                 <span class="text-[12px] font-medium pointer-events-none mt-0.5">${post.replies > 0 ? post.replies : ''}</span>
                             </button>
-                            <button class="flex items-center gap-1 hover:text-secondary group transition action-btn" data-action="like">
+                            <button class="flex items-center gap-1 hover:text-green-500 group transition action-btn ${post.repost_id ? 'repost-active' : ''}" data-action="repost">
+                                <div class="w-7 h-7 flex items-center justify-center rounded-full group-hover:bg-green-500/10 transition pointer-events-none"><span class="material-symbols-rounded !text-[18px]">repeat</span></div>
+                            </button>
+                            <button class="flex items-center gap-1 ${post.is_liked ? 'is-liked' : ''} hover:text-secondary group transition action-btn" data-action="like">
                                 <div class="w-7 h-7 flex items-center justify-center rounded-full group-hover:bg-secondary/10 transition pointer-events-none"><span class="material-symbols-rounded !text-[18px]">favorite</span></div>
-                                <span class="text-[12px] font-medium pointer-events-none mt-0.5">${post.likes > 0 ? post.likes : ''}</span>
+                                <span class="count text-[12px] font-medium pointer-events-none mt-0.5">${post.likes > 0 ? post.likes : ''}</span>
                             </button>
                             <button class="flex items-center gap-1 ${isBookmarked ? 'text-primary' : ''} hover:text-primary group transition action-btn" data-action="bookmark">
                                 <div class="w-7 h-7 flex items-center justify-center rounded-full group-hover:bg-primary/10 transition pointer-events-none"><span class="material-symbols-rounded !text-[18px] ${isBookmarked ? '!font-bold' : ''}">bookmark</span></div>
                             </button>
+                            ${(post.handle === currentUser?.handle) ? `
+                            <button class="flex items-center gap-1 hover:text-primary group transition action-btn" data-action="pin">
+                                <div class="w-7 h-7 flex items-center justify-center rounded-full group-hover:bg-primary/10 transition pointer-events-none"><span class="material-symbols-rounded !text-[18px] ${post.isPinned ? '!font-bold text-primary' : ''}">push_pin</span></div>
+                            </button>
+                            ` : ''}
                         </div>
                     </div>
                 </div>
@@ -654,7 +736,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p class="text-[13px]">
                         <span class="mention font-bold cursor-pointer hover:underline" data-handle="${n.actor_handle}">${n.actor_handle}</span> さんが ${typeLabels[n.type] || '通知を送りました'}
                     </p>
-                    <p class="text-[11px] text-textSub dark:text-darkTextSub mt-0.5">${formatTimeAgo(n.created_at)}</p>
+                    ${n.post_text ? `<p class="text-[13px] text-textSub dark:text-darkTextSub mt-1 pl-2 border-l-2 border-borderBase line-clamp-3">${n.post_text}</p>` : ''}
+                    <p class="text-[11px] text-textSub dark:text-darkTextSub mt-1">${formatTimeAgo(n.created_at)}</p>
                 </div>
             </div>
         `).join('');
@@ -672,13 +755,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    function renderView(view) {
+    function renderView(view, pushHistory = true) {
+        if (pushHistory) viewHistory.push({ view: currentView, viewedUser: viewedUserProfile });
         currentView = view;
         postSection.classList.add('hidden');
         profileHeader.classList.add('hidden');
         profileTabs.classList.add('hidden');
+        feed.classList.remove('hidden');
+        document.getElementById('post-detail').classList.add('hidden');
         feed.innerHTML = '';
         window.scrollTo({ top: 0, behavior: 'instant' });
+        
+        document.getElementById('back-btn').classList.toggle('hidden', viewHistory.length <= 1);
 
         if (view === 'home') {
             headerTitle.textContent = 'ホーム';
@@ -726,7 +814,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!currentUser) { document.getElementById('login-modal').classList.add('modal-open'); return; }
             const h = profEl.getAttribute('data-handle')?.replace('@', '');
             if (!h) return;
-            viewedUserProfile = { displayName: h, handle: h, avatar: `https://ui-avatars.com/api/?name=${h}&background=random`, bio: '', banner: '' };
+            viewedUserProfile = { handle: h }; // Will be populated by updateProfileHeader
             navItems.forEach(i => i.classList.remove('active'));
             document.querySelector('.nav-item[data-view="profile"]').classList.add('active');
             renderView('profile');
@@ -754,10 +842,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (notifEl && currentView === 'notifications') {
             const pid = notifEl.getAttribute('data-post-id');
             if (pid) {
-                // For now just go home and highlight (future: individual post view)
-                navItems.forEach(i => i.classList.remove('active'));
-                document.querySelector('.nav-item[data-view="home"]').classList.add('active');
-                renderView('home');
+                renderPostDetail(pid);
             }
             return;
         }
@@ -777,14 +862,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 apiFetch('/api/posts/bookmark', 'POST', { post_id: pid });
                 showToast(bookmarks.includes(pid) ? 'ブックマークしました ✓' : 'ブックマークを解除しました', 'info');
             } else if (action === 'like') {
-                const res = await apiFetch('/api/posts/like', 'POST', { post_id: pid });
-                if (res) {
-                    showToast(res.action === 'liked' ? 'いいねしました ❤️' : 'いいねを取り消しました', 'info');
-                    refreshFeed();
+                const isLiked = actBtn.classList.contains('is-liked');
+                actBtn.classList.toggle('is-liked');
+                const countEl = actBtn.querySelector('.count');
+                if (countEl) {
+                    let count = parseInt(countEl.textContent) || 0;
+                    countEl.textContent = isLiked ? (count > 1 ? count - 1 : '') : (count + 1);
                 }
+                apiFetch('/api/posts/like', 'POST', { post_id: pid });
+            } else if (action === 'repost') {
+                openRepostMenu(pid);
             } else if (action === 'reply') {
-                const post = SERVER_POSTS.find(p => p.id === pid);
-                if (post) openComposeModal(post);
+                openComposeModal({ id: pid, handle: actBtn.closest('article').querySelector('.font-mono').textContent });
+            } else if (action === 'pin') {
+                const isPinned = actBtn.closest('article').querySelector('.material-symbols-rounded[span="push_pin"]');
+                if (confirm(isPinned ? '固定を解除しますか？' : 'プロフィールに固定しますか？')) {
+                    apiFetch(isPinned ? '/api/posts/unpin' : '/api/posts/pin', 'POST', { post_id: pid });
+                    showToast(isPinned ? '固定解除しました' : '固定しました');
+                    setTimeout(() => location.reload(), 500);
+                }
+            }
+        } else {
+            // Click on post to see detail
+            const postEl = e.target.closest('article[data-post-id]');
+            if (postEl && currentView !== 'notifications') {
+                renderPostDetail(postEl.getAttribute('data-post-id'));
             }
         }
     });
@@ -800,7 +902,17 @@ document.addEventListener('DOMContentLoaded', () => {
     async function updateTabContent(tabName, user) {
         if (!user) return;
         if (tabName === 'posts') {
-            renderFeed(SERVER_POSTS.filter(p => p.handle === user.handle));
+            const filtered = SERVER_POSTS.filter(p => p.handle === user.handle);
+            // Handle Pinned Post
+            if (user.pinned_post_id) {
+                const pinnedIdx = filtered.findIndex(p => p.id === user.pinned_post_id);
+                if (pinnedIdx > -1) {
+                    const pinned = filtered.splice(pinnedIdx, 1)[0];
+                    renderFeed([ { ...pinned, isPinned: true }, ...filtered ]);
+                    return;
+                }
+            }
+            renderFeed(filtered);
         } else if (tabName === 'likes') {
             feed.innerHTML = renderSkeleton(3);
             const data = await apiFetch(`/api/likes/${user.handle}`);
@@ -813,23 +925,137 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Header avatar click -> go to own profile
-    headerAvatar.addEventListener('click', () => {
-        if (!currentUser) return;
-        viewedUserProfile = null;
-        navItems.forEach(i => i.classList.remove('active'));
-        document.querySelector('.nav-item[data-view="profile"]').classList.add('active');
-        renderView('profile');
+    // --- New Functions Implementation ---
+
+    async function renderPostDetail(postId) {
+        renderView('post_detail');
+        headerTitle.textContent = '投稿';
+        const pdContainer = document.getElementById('post-detail');
+        feed.classList.add('hidden');
+        pdContainer.classList.remove('hidden');
+        pdContainer.innerHTML = renderSkeleton(1);
+
+        const res = await apiFetch(`/api/posts/${postId}`);
+        if (!res || !res.post) {
+            pdContainer.innerHTML = '<div class="p-8 text-center opacity-50">投稿が見つかりませんでした</div>';
+            return;
+        }
+
+        const p = res.post;
+        pdContainer.innerHTML = `
+            <div class="p-4 border-b border-borderBase dark:border-darkBorder animate-fade-in">
+                <div class="flex gap-3 mb-4">
+                    <img src="${p.avatar}" class="w-12 h-12 rounded-full avatar-click" data-handle="${p.handle}">
+                    <div class="flex-1">
+                        <div class="font-bold text-[16px]">${p.user}</div>
+                        <div class="text-textSub dark:text-darkTextSub text-[14px] font-mono opacity-80">${p.handle}</div>
+                    </div>
+                </div>
+                <div class="text-[17px] leading-relaxed mb-4 whitespace-pre-wrap">${formatPostText(p.text)}</div>
+                <div class="text-textSub dark:text-darkTextSub text-[14px] mb-4 pb-4 border-b border-borderBase dark:border-darkBorder">
+                    ${new Date(p.time).toLocaleString('ja-JP')}
+                </div>
+                <div class="flex gap-6 py-2 border-b border-borderBase dark:border-darkBorder text-[14px]">
+                    <span><strong>${p.likes}</strong> いいね</span>
+                </div>
+                <div class="flex justify-around py-2">
+                    <button class="flex items-center hover:text-primary transition" onclick="window.SNS_openReply(${p.id}, '${p.handle}')"><span class="material-symbols-rounded">chat_bubble</span></button>
+                    <button class="flex items-center hover:text-green-500 transition" onclick="window.SNS_openRepost(${p.id})"><span class="material-symbols-rounded">repeat</span></button>
+                    <button class="flex items-center ${p.is_liked ? 'text-secondary' : 'hover:text-secondary'} transition" onclick="window.SNS_toggleLike(this, ${p.id})"><span class="material-symbols-rounded ${p.is_liked ? '!font-bold' : ''}">favorite</span></button>
+                </div>
+            </div>
+            <div id="replies-list"></div>
+        `;
+        
+        const rList = document.getElementById('replies-list');
+        if (res.replies && res.replies.length > 0) {
+            rList.innerHTML = res.replies.map(r => `
+                <div class="p-4 border-b border-borderBase/50 dark:border-darkBorder/50 flex gap-3 cursor-pointer" onclick="window.SNS_renderPostDetail(${r.id})">
+                    <img src="${r.avatar}" class="w-9 h-9 rounded-full avatar-click" data-handle="${r.handle}">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-1.5 mb-1">
+                            <span class="font-bold text-[14px]">${r.user}</span>
+                            <span class="text-textSub dark:text-darkTextSub text-[12px] opacity-60">${r.handle}</span>
+                        </div>
+                        <div class="text-[14px]">${formatPostText(r.text)}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+    }
+
+    // Global helpers
+    window.SNS_openReply = (id, h) => openComposeModal({ id, handle: h });
+    window.SNS_openRepost = (id) => openRepostMenu(id);
+    window.SNS_renderPostDetail = (id) => renderPostDetail(id);
+    window.SNS_toggleLike = async (btn, id) => {
+        const icon = btn.querySelector('.material-symbols-rounded');
+        icon.classList.toggle('!font-bold');
+        btn.classList.toggle('text-secondary');
+        apiFetch('/api/posts/like', 'POST', { post_id: id });
+    };
+
+    async function openUserList(type, handle) {
+        const modal = document.getElementById('user-list-modal');
+        const title = document.getElementById('user-list-title');
+        const content = document.getElementById('user-list-content');
+        
+        title.textContent = type === 'followers' ? 'フォロワー' : 'フォロー中';
+        content.innerHTML = renderSkeleton(3);
+        modal.classList.add('modal-open');
+
+        const users = await apiFetch(`/api/follows/${handle}/${type}`);
+        if (!users || users.length === 0) {
+            content.innerHTML = '<div class="p-8 text-center opacity-50">ユーザーが見つかりませんでした</div>';
+            return;
+        }
+
+        content.innerHTML = users.map(u => `
+            <div class="user-list-item avatar-click" data-handle="${u.handle}">
+                <img src="${u.avatar || `https://ui-avatars.com/api/?name=${u.handle}`}" class="w-10 h-10 rounded-full">
+                <div class="flex-1 min-w-0">
+                    <div class="font-bold text-[14px] truncate">${u.display_name || u.handle}</div>
+                    <div class="text-[12px] opacity-60 truncate">${u.handle}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+    document.getElementById('close-user-list-modal').addEventListener('click', () => document.getElementById('user-list-modal').classList.remove('modal-open'));
+
+    let currentRepostTargetId = null;
+    function openRepostMenu(postId) {
+        currentRepostTargetId = postId;
+        const menu = document.getElementById('repost-menu');
+        menu.classList.remove('hidden');
+    }
+    document.getElementById('repost-menu-overlay').addEventListener('click', () => document.getElementById('repost-menu').classList.add('hidden'));
+    
+    document.querySelectorAll('.repost-menu-item').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const action = btn.getAttribute('data-action');
+            document.getElementById('repost-menu').classList.add('hidden');
+            
+            if (action === 'repost') {
+                const res = await apiFetch('/api/posts/repost', 'POST', { post_id: currentRepostTargetId });
+                if (res && res.success) { showToast('リポストしました'); refreshFeed(); }
+            } else {
+                openComposeModal();
+                composeInput.value = `RT @handle `; // Simplified indicator
+                composeInput.dispatchEvent(new Event('input'));
+            }
+        });
+    });
+
+    document.getElementById('back-btn').addEventListener('click', () => {
+        if (viewHistory.length > 1) {
+            viewHistory.pop(); // current
+            const prev = viewHistory.pop(); // previous
+            viewedUserProfile = prev.viewedUser;
+            renderView(prev.view, false);
+        }
     });
 
     renderHeaderState();
-
     if (token) startNotifPolling();
-
-    // Auto load home feed
-    if (currentView === 'home') {
-        headerTitle.textContent = 'ホーム';
-        updatePostSection();
-        refreshFeed();
-    }
+    refreshFeed();
 });
