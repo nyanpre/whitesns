@@ -1,3 +1,5 @@
+window.app = {}; // グローバルに app オブジェクトを作成
+
 document.addEventListener('DOMContentLoaded', () => {
     // --- Configuration ---
     const API_BASE = "https://nyanpre-whitesns-api.hf.space";
@@ -1055,6 +1057,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // --- エクスポート設定 ---
+    // HTML内の onclick="app.openComposeModal()" などから呼べるように紐付け
+    window.app.openComposeModal = openComposeModal;
+    window.app.renderView = renderView;
+    window.app.openProfileEdit = openProfileEdit;
+    window.app.refreshFeed = refreshFeed;
+    window.app.switchAccount = switchAccount;
+
+    // --- 初期化実行 ---
     renderHeaderState();
     if (token) startNotifPolling();
     refreshFeed();
